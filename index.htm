@@ -14,22 +14,21 @@
     <button id="example2">釉燒</button>
     <button id="example3">熱處理</button>
 	<div div>
-	<button id="example4">開始Start</button>
-	<button id="addSegment">增加段數(+)</button>
-	<button id="removeSegment">減少段數(-)</button>
-	<button id="test3">檢查錯誤</button>
+	  <div id="controls">
+	  <label for="maxTemp">
+	    <button id="example4">開始Start</button>
+        <button id="addSegment">增加段數(+)</button>
+        <button id="removeSegment">減少段數(-)</button>
+        <button id="test3">檢查錯誤</button>
+        最大溫度：</label>
+	  <input type="number" id="maxTemp" value="1300" min="100" max="2000" />
+	  °C
+	  <input type="number" id="timeExtendRate" max="1" min="1" value="60" readonly="readonly" />
+	  </div>
 
-  </div>
+</div>
   <div id="error-message" style="color: red; font-weight: bold; margin-top: 10px;"></div>
-  <!-- 控制區：設定最大溫度與時間延展速率 -->
-  <div id="controls">
-    <label for="maxTemp">最大溫度：</label>
-    <input type="number" id="maxTemp" value="1300" min="100" max="2000" /> °C
-    <label for="timeExtendRate">	：</label>
-    <input type="number" id="timeExtendRate" value="60" min="10" max="300" /> 
-  </div>
-
-  <!-- 圖表與摘要容器 -->
+  <!-- 控制區：設定最大溫度與時間延展速率 --><!-- 圖表與摘要容器 -->
   <div id="chart-wrapper">
     <!-- 圖表區域 -->
     <div id="chart-container">

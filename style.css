@@ -39,7 +39,7 @@ canvas {
   position: relative;
   width: 100%;
   max-width: 800px;
-  height: 600px;
+  height: 500px;
   resize: both;
   overflow: auto;
   border: 2px dashed #aaa;
@@ -54,7 +54,7 @@ canvas {
   font-family: monospace;
   white-space: pre-line;
   min-width: 300px;
-  height: 600px;
+  height: 500px;
   overflow-y: auto;
 }
 
@@ -71,10 +71,10 @@ canvas {
   font-family: monospace;
   white-space: pre-line;
   min-width: 300px;
-  height: 600px;
+  height: 500px;
   overflow-y: auto;
   
-  font-size: 22px;         /* 字體大小調大 */
+  font-size: 20px;         /* 字體大小調大 */
   line-height: 1.4;        /* 行高 */
 }
 * {

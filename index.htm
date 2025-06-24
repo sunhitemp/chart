@@ -9,7 +9,7 @@
 </head>
 <body>
   <div id="examples" style="float:left; margin-right:20px;">
-  <img src="SUNRISE10D2.jpg" width="200" height="53" alt=""/> 範例程式(參考值)
+  <img src="SUNRISE10D2.jpg" width="200" height="53" alt=""/> <br>範例程式(參考值)
   <button id="example1">素燒</button>
     <button id="example2">釉燒</button>
     <button id="example3">熱處理</button>
@@ -20,10 +20,9 @@
         <button id="addSegment">增加段數(+)</button>
         <button id="removeSegment">減少段數(-)</button>
         <button id="test3">檢查錯誤</button>
-        最大溫度：</label>
-	  <input type="number" id="maxTemp" value="1300" min="100" max="2000" />
-	  °C
-	  <input type="number" id="timeExtendRate" max="1" min="1" value="60" readonly="readonly" />
+        <BR>最大溫度：</label>
+	  <input type="number" id="maxTemp" value="1300" min="100" max="2000" />°C
+	 
 	  </div>
 
 </div>
@@ -34,14 +33,15 @@
     <div id="chart-container">
       <canvas id="lineChart"></canvas>
     </div>
-    <!-- 段落摘要欄 -->
+    <!-- 段落摘要欄 -->程式設定:<BR>
     <div id="segment-summary"></div>
   </div>
 </h2><!-- 新增範例按鈕區 --><span id="i00c4">© 2015-2025 陽昇電熱有限公司版權所有</span>
-
+ <input type="number" id="timeExtendRate" max="1" min="1" value="60" readonly="readonly" />
   <!-- 載入 Chart.js 函式庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- 載入外部 JS 腳本 -->
   <script src="script.js"></script>
+  
 </body>
 </html>

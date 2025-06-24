@@ -283,7 +283,7 @@ function updateSegmentSummary() {
     // 計算 PV 和 SV
     const pvNumber = Math.floor((segmentIndex - 1) / 8) + 1;
     const svNumber = ((segmentIndex - 1) % 8) + 1;
-
+    const tnNumber = ((segmentIndex - 1) % 8) + 1;
     const label = `PV${pvNumber}_SV${svNumber}`;
     const tempText = `${label}: <span class="editable" style="color: red;"onclick="editTemp(${i})">${pt.y}</span> °C`;
 
@@ -293,17 +293,17 @@ function updateSegmentSummary() {
       // 最後一筆，檢查是否 END
       const timeDiff = pt.x - prevPt.x;
       if (timeDiff === 0) {
-        div.innerHTML = `${tempText}<br>tN${i}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">END</span>`;
+        div.innerHTML = `${tempText}<br>tN${tnNumber}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">END</span>`;
       } else {
         const hr = Math.floor(timeDiff / 60).toString().padStart(2, '0');
         const min = (timeDiff % 60).toString().padStart(2, '0');
-        div.innerHTML = `${tempText}<br>tN${i}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">${hr}:${min}</span>`;
+        div.innerHTML = `${tempText}<br>tN${tnNumber}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">${hr}:${min}</span>`;
       }
     } else {
       const timeDiff = pt.x - prevPt.x;
       const hr = Math.floor(timeDiff / 60).toString().padStart(2, '0');
       const min = (timeDiff % 60).toString().padStart(2, '0');
-      div.innerHTML = `${tempText}<br>tN${i}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">${hr}:${min}</span>`;
+      div.innerHTML = `${tempText}<br>tN${tnNumber}: <span class="editable" style="color: red;"onclick="editTime(${i - 1})">${hr}:${min}</span>`;
     }
 
     container.appendChild(div);
@@ -451,6 +451,128 @@ document.getElementById('example4').addEventListener('click', () => {
   loadExample('example4');
 });
 
+
+document.getElementById('outdate').addEventListener('click', updateFloatingSummary);
+
+function updateFloatingSummary() {
+  const data = chart.data.datasets[0].data;
+
+  // 找到或建立彈出層
+  let isMobile = window.innerWidth <= 768; // 可依實際調整判斷寬度
+  const columns = isMobile ? 3 : 6;
+  let overlay = document.getElementById('floatingSummary');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'floatingSummary';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '10px';
+    overlay.style.right = '10px';
+    overlay.style.backgroundColor = '#222';
+    overlay.style.color = '#fff';
+    overlay.style.padding = '20px';
+    overlay.style.borderRadius = '12px';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'grid';
+    overlay.style.gridTemplateColumns = `repeat(${columns}, 100px)`; // 每行5個
+    overlay.style.gap = '12px';
+    overlay.style.maxHeight = '80vh';
+    overlay.style.overflowY = 'auto';
+    overlay.style.position = 'fixed';
+    overlay.innerHTML = `
+      <div style="grid-column: span ${columns}; text-align: right;">
+        <span id="closeFloatingSummary" style="cursor: pointer; font-size: 18px; font-weight: bold">✕</span>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // 關閉事件
+    overlay.querySelector('#closeFloatingSummary').addEventListener('click', () => {
+      overlay.remove();
+    });
+  } else {
+    // 清空除掉關閉行之外的所有節點
+    Array.from(overlay.children).forEach(child => {
+      if (!child.querySelector('#closeFloatingSummary')) {
+        overlay.removeChild(child);
+      }
+    });
+  }
+
+  // 更新資料
+  for (let i = 1; i < data.length; i++) {
+    const pt = data[i];
+    const prevPt = data[i - 1];
+    const segmentIndex = i;
+
+    // PV 和 SV
+    const pvNumber = Math.floor((segmentIndex - 1) / 8) + 1;
+    const svNumber = ((segmentIndex - 1) % 8) + 1;
+    const tnNumber = ((segmentIndex - 1) % 8) + 1;
+	const outNumber = ((segmentIndex - 1) % 8) + 1;
+    // 如果是 SV_1，插入 PtN 標籤
+    if (svNumber === 1) {
+      const ptNBox = createBox('PtN', `${pvNumber}`);
+      overlay.appendChild(ptNBox);
+    }
+
+
+    // 製作3個方塊
+    const svLabel = `SV_${svNumber}`;
+    const svValue = `${pt.x}`;
+    const tnLabel = `tN_${tnNumber}`;
+    const tnValue = (() => {
+      if (i === data.length - 1) {
+        const timeDiff = pt.x - prevPt.x;
+        if (timeDiff === 0) return 'END';
+        const hr = Math.floor(timeDiff / 60).toString().padStart(2, '0');
+        const min = (timeDiff % 60).toString().padStart(2, '0');
+        return `${hr}.${min}`;
+      } else {
+        const timeDiff = pt.x - prevPt.x;
+        const hr = Math.floor(timeDiff / 60).toString().padStart(2, '0');
+        const min = (timeDiff % 60).toString().padStart(2, '0');
+        return `${hr}.${min}`;
+      }
+    })();
+
+    const outLabel = `OUT_${outNumber}`;;
+    const outValue = '100.0';
+
+    // 創建方塊
+    const svBox = createBox(`SV_${svNumber}`, pt.y);
+    const tnBox = createBox(tnLabel, tnValue);
+    const outBox = createBox(outLabel, outValue);
+
+
+    overlay.appendChild(svBox);
+    overlay.appendChild(tnBox);
+    overlay.appendChild(outBox);
+  }
+}
+
+// 創建方塊的小工具
+function createBox(label, value, labelColor = '#ff3430', valueColor = '#f2ff00', bgColor = '#333') {
+  const box = document.createElement('div');
+  box.style.display = 'flex';
+  box.style.flexDirection = 'column';
+  box.style.alignItems = 'center';
+  box.style.justifyContent = 'center';
+  box.style.background = '#000';
+  box.style.borderRadius = '8px';
+  box.style.width = '100px';
+  box.style.height = '100px';
+  box.innerHTML = `
+
+	<div style="font-size: 24px; color: ${labelColor}">${label}</div>
+    <div style="font-size: 20px; color: ${valueColor}">${value}</div>
+	
+	
+  `;
+  return box;
+}
+
+
+	
+
 function loadExample(name) {
   const data = exampleData[name];
   if (!data) return;
@@ -482,7 +604,9 @@ document.getElementById('test3').addEventListener('click', () => {
     errorDiv.textContent = '錯誤!最後一段程式時間必須為END';
   } else {
     errorDiv.textContent = '';  // 清空錯誤訊息
-    alert('程式正確，請按照右邊的內容輸入進溫度控制器');
+    alert('程式正確，請按照右邊的流程圖輸入進溫度控制器');
+	 // 自動點擊「流程圖」按鈕
+  document.getElementById('outdate').click();
   }
 });
 
@@ -533,4 +657,6 @@ document.getElementById('removeSegment').addEventListener('click', () => {
 document.getElementById("restartApp").addEventListener("click", () => {
   location.reload();
 });
+
+
 

@@ -482,7 +482,7 @@ document.getElementById('test3').addEventListener('click', () => {
     errorDiv.textContent = '錯誤!最後一段程式時間必須為END';
   } else {
     errorDiv.textContent = '';  // 清空錯誤訊息
-    alert('程式正確，請按照右邊的內容輸入進程式控制器');
+    alert('程式正確，請按照右邊的內容輸入進溫度控制器');
   }
 });
 

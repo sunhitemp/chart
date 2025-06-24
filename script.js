@@ -72,37 +72,86 @@ const chart = new Chart(ctx, {
   }
 });
 
-// 拖曳點位邏輯
+// ===========================
+// 拖曳點位共用處理
+// ===========================
 let draggingPoint = null;
 const canvas = chart.canvas;
 
-canvas.addEventListener('mousedown', (e) => {
-  const point = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)[0];
-  if (point) draggingPoint = point.index;
-});
+function getPointIndex(event) {
+  const point = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, false)[0];
+  return point ? point.index : null;
+}
 
-canvas.addEventListener('mouseup', () => draggingPoint = null);
-
-canvas.addEventListener('mousemove', (e) => {
-  if (draggingPoint === null) return;
+function getXY(event) {
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  // 用 mouse 或 touch 均取得相對位置
+  const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
+// 開始拖曳
+function startDrag(event) {
+  draggingPoint = getPointIndex(event);
+}
+
+// 結束拖曳
+function endDrag() {
+  draggingPoint = null;
+}
+
+// 執行拖曳
+function doDrag(event) {
+  if (draggingPoint === null) return;
+
+  const { x, y } = getXY(event);
   const xValue = Math.floor(chart.scales.x.getValueForPixel(x));
   const yValue = Math.round(chart.scales.y.getValueForPixel(y));
   const left = draggingPoint === 0 ? 0 : chart.data.datasets[0].data[draggingPoint - 1].x + 1;
-  const right = draggingPoint === chart.data.datasets[0].data.length - 1 ? 9999 : chart.data.datasets[0].data[draggingPoint + 1].x - 1;
+  const right = draggingPoint === chart.data.datasets[0].data.length - 1
+    ? 9999
+    : chart.data.datasets[0].data[draggingPoint + 1].x - 1;
+
   const newX = draggingPoint === 0 ? 0 : Math.min(Math.max(xValue, left), right);
   const newY = draggingPoint === 0 ? 0 : Math.min(Math.max(yValue, 30), maxTemp);
-  chart.data.datasets[0].data[draggingPoint] = { x: newX, y: newY };
 
+  chart.data.datasets[0].data[draggingPoint] = { x: newX, y: newY };
   if (newX > chart.options.scales.x.max - 30) {
     chart.options.scales.x.max += timeExtendRate;
   }
-
   chart.update();
   updateSegmentSummary();
+}
+
+// ===========================
+// 事件監聽
+// ===========================
+// 滑鼠
+canvas.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  startDrag(e);
 });
+canvas.addEventListener('mousemove', (e) => {
+  e.preventDefault();
+  doDrag(e);
+});
+canvas.addEventListener('mouseup', endDrag);
+
+// 觸控
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  startDrag(e);
+});
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  doDrag(e);
+});
+canvas.addEventListener('touchend', endDrag);
+
 
 // 雙擊新增或修改資料點（溫度或時間差）
 canvas.addEventListener('dblclick', (e) => {

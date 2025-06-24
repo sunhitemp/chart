@@ -7,7 +7,7 @@ let maxTemp = 1300;
 const initialTemp = 30;
 let timeExtendRate = 60;
 const totalHours = 8;
-const numPoints = totalHours + 1;
+const numPoints = totalHours - 6;
 
 // 預設資料點（固定溫度 30）
 const data = Array.from({ length: numPoints }, (_, i) => ({

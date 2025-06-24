@@ -184,3 +184,47 @@ body {
 #timeExtendRate {
 	color: rgba(255, 255, 255, 1);
 }
+
+
+
+/* ==============================
+   手機螢幕優化
+============================== */
+@media (max-width: 600px) {
+  /* 圖表和摘要改為縱向排列 */
+  #chart-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 限制 Canvas 高度並撐滿螢幕寬度 */
+  #chart-container {
+    max-width: 100%;
+    height: 300px;
+  }
+
+  /* 段落摘要撐滿螢幕寬度，減少高度和字體尺寸 */
+  #segment-summary {
+    min-width: unset;
+    max-width: 100%;
+	width: 300px;
+    height: 300px;
+    font-size: 16px;
+    line-height: 1.3;
+    padding: 8px;
+  }
+
+  /* 控制項排列方向改成縱向，更好點擊 */
+  #controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  /* 調整時間差標籤尺寸讓手機更好看 */
+  .distance-label {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+}

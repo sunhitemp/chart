@@ -45,6 +45,7 @@
       if (!isNaN(num)) {
         num += delta;
         input.value = num;
+        generateQRCode();  // 增加這一行，讓 QR Code 同步更新
       }
     }
 

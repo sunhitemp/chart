@@ -424,7 +424,7 @@ const exampleData = {
   ],
   example4: [
     { x: 0, y: 30 },
-    { x: 60, y: 30 },	
+    { x: 60, y: 30 }
   ],
 };
 document.getElementById('example1').addEventListener('click', () => {

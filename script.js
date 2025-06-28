@@ -424,18 +424,7 @@ const exampleData = {
   ],
   example4: [
     { x: 0, y: 30 },
-    { x: 60, y: 30 },
-    { x: 120, y: 30 },
-    { x: 180, y: 30 },
-    { x: 240, y: 30 },
-    { x: 300, y: 30 },
-    { x: 360, y: 30 },
-    { x: 420, y: 30 },
-    { x: 480, y: 30 }
-	
-	
-	
-	
+    { x: 60, y: 30 },	
   ],
 };
 document.getElementById('example1').addEventListener('click', () => {

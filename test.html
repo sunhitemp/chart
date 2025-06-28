@@ -63,7 +63,7 @@
     function generateQRCode() {
       const date = document.getElementById('dateInput').value;
       const number = document.getElementById('numberInput').value;
-      const text = `PH062811406281756000004e7000005265487241089402695pzHw66dBJ9TQr3UfmTUHXw==:${number}:${date}:1:1:1`;
+      const text = `PH${number}{date}11406281756000004e7000005265487241089402695pzHw66dBJ9TQr3UfmTUHXw==:**********:1:1:1`;
       QRCode.toCanvas(document.getElementById('qrcodeCanvas'), text, function (error) {
         if (error) console.error(error);
       });

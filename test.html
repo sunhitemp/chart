@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>動態 QR Code 產生器</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+    input, button {
+      margin: 5px;
+      padding: 10px;
+    }
+    #qrcode {
+      margin-top: 20px;
+      transform: scale(1);
+      transform-origin: top left;
+    }
+  </style>
+</head>
+<body>
+  <h2>QR Code 產生器</h2>
+  <label>輸入日期（例如0628）：</label><br>
+  <input type="text" id="dateInput" value="0628"><br>
+
+  <label>數字：</label><br>
+  <input type="text" id="numberInput" value="7509941211" readonly>
+  <button onclick="adjustNumber(1)">+</button>
+  <button onclick="adjustNumber(-1)">-</button><br>
+
+  <button onclick="zoomIn()">放大</button>
+  <button onclick="zoomOut()">縮小</button><br>
+
+  <button onclick="generateQRCode()">產生 QR Code</button>
+  <div id="qrcode"></div>
+
+  <script>
+    let scale = 1;
+
+    function adjustNumber(delta) {
+      let input = document.getElementById('numberInput');
+      let num = parseInt(input.value);
+      if (!isNaN(num)) {
+        num += delta;
+        input.value = num;
+      }
+    }
+
+    function zoomIn() {
+      scale += 0.1;
+      document.getElementById('qrcode').style.transform = `scale(${scale})`;
+    }
+
+    function zoomOut() {
+      if (scale > 0.2) {
+        scale -= 0.1;
+        document.getElementById('qrcode').style.transform = `scale(${scale})`;
+      }
+    }
+
+    function generateQRCode() {
+      const date = document.getElementById('dateInput').value;
+      const number = document.getElementById('numberInput').value;
+      const text = `PH數字11406281756000004e7000005265487241089402695pzHw66dBJ9TQr3UfmTUHXw==:${number}:${date}:1:1:1`;
+      QRCode.toCanvas(document.getElementById('qrcodeCanvas'), text, function (error) {
+        if (error) console.error(error);
+      });
+    }
+
+    // 預設產生一個 canvas 給 QRCode 使用
+    const canvas = document.createElement('canvas');
+    canvas.id = 'qrcodeCanvas';
+    document.getElementById('qrcode').appendChild(canvas);
+  </script>
+</body>
+</html>

@@ -8,6 +8,19 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body oncontextmenu ="return false">  
+<script>
+document.addEventListener('keydown', function (e) {
+    if (e.key === "F12") {
+        // 可選：防止打開開發者工具
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 自動跳轉到其他網頁
+        window.location.href = "https://www.sunhitemp.com"; // 這裡改成你要移動的網址
+    }
+});
+</script>
+	
   <div id="examples" style="float:left; margin-right:20px;">
   <a href="https://www.sunhitemp.com/"><img src="SUNRISE10D2.jpg" width="200" height="53" title="陽昇電熱有限公司" alt="陽昇電熱有限公司"/></a> <br>範例程式(參考值)
   <button id="example1">素燒</button>

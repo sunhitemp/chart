@@ -20,6 +20,26 @@ document.addEventListener('keydown', function (e) {
     }
 });
 </script>
+<script>
+let devtoolsOpen = false;
+
+const element = new Image();
+Object.defineProperty(element, 'id', {
+    get: function () {
+        devtoolsOpen = true;
+        window.location.href = "https://www.sunhitemp.com"; // 偵測開啟即跳轉
+    }
+});
+
+setInterval(function () {
+    devtoolsOpen = false;
+    console.log(element);
+    if (devtoolsOpen) {
+        // 若開啟控制台會被偵測
+    }
+}, 1000);
+</script>
+
 	
   <div id="examples" style="float:left; margin-right:20px;">
   <a href="https://www.sunhitemp.com/"><img src="SUNRISE10D2.jpg" width="200" height="53" title="陽昇電熱有限公司" alt="陽昇電熱有限公司"/></a> <br>範例程式(參考值)

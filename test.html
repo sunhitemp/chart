@@ -1,79 +1,363 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>動態 QR Code 產生器</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <style>
-    body {
-      font-family: Arial;
-      padding: 20px;
-    }
-    input, button {
-      margin: 5px;
-      padding: 10px;
-    }
-    #qrcode {
-      margin-top: 20px;
-      transform: scale(1);
-      transform-origin: top left;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秒懂電窯溫度：110V 到底能燒多高溫？</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fffbeb; }
+        
+        /* 遊戲區塊樣式 */
+        .game-container { position: relative; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 40px; }
+        
+        /* 水龍頭 (電源) */
+        .tap { width: 60px; height: 60px; background: #cbd5e1; border-radius: 10px; position: absolute; top: 0; z-index: 10; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid #94a3b8;}
+        .tap::after { content: ''; position: absolute; bottom: -15px; width: 20px; height: 15px; background: #cbd5e1; border: 3px solid #94a3b8; border-top: none; }
+        
+        /* 水流 (熱能) */
+        .stream { position: absolute; top: 75px; background: linear-gradient(to bottom, #fde047, #f97316); border-radius: 10px; opacity: 0; transition: all 0.3s; z-index: 5;}
+        .stream.active { opacity: 1; animation: flowDown 0.5s infinite linear; }
+        
+        /* 水桶 (窯爐空間) */
+        .bucket { position: relative; border: 6px solid #475569; border-top: none; border-radius: 0 0 20px 20px; background: rgba(255,255,255,0.5); overflow: visible; display: flex; align-items: flex-end; transition: all 0.5s; z-index: 8; }
+        
+        /* 水位 (目前溫度) */
+        .water { width: 100%; height: 0%; background: linear-gradient(to top, #ef4444, #f97316); border-radius: 0 0 14px 14px; transition: height 0.1s linear; position: relative; }
+        
+        /* 漏水孔與漏水動畫 (散熱) */
+        .hole { position: absolute; width: 12px; height: 12px; background: #475569; border-radius: 50%; z-index: 20;}
+        .leak-stream { position: absolute; width: 6px; height: 0px; background: #f97316; border-radius: 3px; top: 6px; left: 3px; opacity: 0; }
+        .bucket.leaking .leak-stream { 
+            animation-name: leakOut;
+            animation-duration: 0.8s;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+            opacity: 1; 
+        }
+        
+        /* 漏水文字動畫 */
+        .leak-text { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: bold; color: #ea580c; white-space: nowrap; opacity: 0; pointer-events: none; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff; }
+        .bucket.leaking .leak-text {
+            animation-name: textDropFade;
+            animation-duration: 1.2s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in;
+        }
+
+        @keyframes flowDown { 0% { background-position: 0 0; } 100% { background-position: 0 20px; } }
+        @keyframes leakOut { 0% { height: 0px; top: 6px; opacity: 1; } 50% { height: 40px; top: 6px; opacity: 0.8; } 100% { height: 20px; top: 40px; opacity: 0; } }
+        @keyframes textDropFade {
+            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0; }
+            20% { opacity: 1; transform: translate(-50%, 5px) scale(1); }
+            80% { opacity: 0.5; }
+            100% { transform: translate(-50%, 30px) scale(0.8); opacity: 0; }
+        }
+
+        /* 刻度線與尺寸標示 */
+        .mark-1280, .mark-1100 { position: absolute; left: -75px; display: flex; align-items: center; z-index: 25; pointer-events: none; width: calc(100% + 75px); }
+        .mark-1280 { bottom: 95%; color: #dc2626; }
+        .mark-1100 { bottom: 82%; color: #ea580c; }
+        .mark-text { font-weight: bold; font-size: 14px; width: 65px; text-align: right; margin-right: 5px; flex-shrink: 0; text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff; }
+        .mark-line { flex-grow: 1; height: 0; border-bottom: 2px dashed currentColor; opacity: 0.8; }
+
+        .btn-select { transition: transform 0.1s, box-shadow 0.1s; }
+        .btn-select:active { transform: translateY(4px); box-shadow: none !important; }
+        .btn-select.active { background-color: #ea580c; color: white; border-color: #c2410c; }
+    </style>
 </head>
-<body>
-  <h2>QR Code 產生器</h2>
-  <label>輸入日期（例如0628）：</label><br>
-  <input type="text" id="dateInput" value="0628"><br>
+<body class="text-slate-800 antialiased">
 
-  <label>數字：</label><br>
-  <input type="text" id="numberInput" value="7509941211" readonly>
-  <button onclick="adjustNumber(1)">+</button>
-  <button onclick="adjustNumber(-1)">-</button><br>
+    <!-- 標題區 -->
+    <header class="bg-orange-500 text-white text-center py-10 px-4 shadow-md">
+        <h1 class="text-3xl md:text-4xl font-black mb-3">🔥 為什麼大電窯用 110V 燒不上去？</h1>
+        <p class="text-lg opacity-90">不要管複雜的數據了，玩個 10 秒鐘的「裝水小遊戲」立刻秒懂！</p>
+    </header>
 
-  <button onclick="zoomIn()">放大</button>
-  <button onclick="zoomOut()">縮小</button><br>
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- 互動遊戲區 -->
+        <section class="bg-white rounded-3xl shadow-xl p-6 md:p-10 border-4 border-orange-100 mb-12">
+            <h2 class="text-2xl font-bold text-center mb-2">🎮 點擊按鈕，開始加熱！</h2>
+            <p class="text-center text-slate-500 mb-8">把電窯想像成一個「底部有破洞的水桶」，火力就像水龍頭。</p>
 
-  <button onclick="generateQRCode()">產生 QR Code</button>
-  <div id="qrcode"></div>
+            <!-- 選擇按鈕 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                <button onclick="startGame(1)" id="btn-1" class="btn-select active bg-orange-50 border-2 border-orange-200 text-slate-700 py-4 px-2 rounded-2xl shadow-[0_4px_0_#fdba74] font-bold text-lg">
+                    <span class="block text-sm font-normal opacity-80 mb-1">小桶子 + 小水龍頭</span>
+                    15公分 (110V)
+                </button>
+                <button onclick="startGame(2)" id="btn-2" class="btn-select bg-orange-50 border-2 border-orange-200 text-slate-700 py-4 px-2 rounded-2xl shadow-[0_4px_0_#fdba74] font-bold text-lg">
+                    <span class="block text-sm font-normal opacity-80 mb-1">大桶子 + 小水龍頭</span>
+                    20公分 (110V)
+                </button>
+                <button onclick="startGame(3)" id="btn-3" class="btn-select bg-orange-50 border-2 border-orange-200 text-slate-700 py-4 px-2 rounded-2xl shadow-[0_4px_0_#fdba74] font-bold text-lg flex flex-col items-center">
+                    <span class="block text-sm font-normal opacity-80 mb-1">大桶子 + 大水龍頭</span>
+                    <span>20公分 <span class="text-red-500 font-black">(220V)</span></span>
+                </button>
+            </div>
 
-  <script>
-    let scale = 1;
+            <!-- 動畫舞台 -->
+            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                <div class="game-container" id="game-stage">
+                    <!-- 水龍頭 -->
+                    <div id="tap" class="tap text-slate-600">110V</div>
+                    <!-- 水流 -->
+                    <div id="stream" class="stream" style="width: 14px; height: 180px;"></div>
+                    
+                    <!-- 水桶 -->
+                    <div id="bucket" class="bucket" style="width: 120px; height: 150px;">
+                        <!-- 刻度 -->
+                        <div class="mark-1280">
+                            <span class="mark-text">1280°C</span>
+                            <div class="mark-line"></div>
+                        </div>
+                        <div class="mark-1100">
+                            <span class="mark-text">1100°C</span>
+                            <div class="mark-line"></div>
+                        </div>
+                        
+                        <!-- 破洞 (動態產生) -->
+                        <div id="holes-container"></div>
+                        <!-- 水位 -->
+                        <div id="water" class="water"></div>
+                        <!-- 溫度顯示 -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                            <span id="temp-display" class="text-3xl font-black text-white drop-shadow-md">25°C</span>
+                        </div>
+                        <!-- 尺寸標示 -->
+                        <div id="bucket-size-label" class="absolute -bottom-8 w-full text-center font-bold text-slate-600 text-sm whitespace-nowrap">規格: 15x15x15</div>
+                    </div>
+                </div>
 
-    function adjustNumber(delta) {
-      let input = document.getElementById('numberInput');
-      let num = parseInt(input.value);
-      if (!isNaN(num)) {
-        num += delta;
-        input.value = num;
-        generateQRCode();  // 增加這一行，讓 QR Code 同步更新
-      }
-    }
+                <!-- 結果解說 -->
+                <div class="text-center mt-6 min-h-[100px]">
+                    <h3 id="result-title" class="text-2xl font-bold text-green-600 mb-2">準備就緒</h3>
+                    <p id="result-desc" class="text-slate-600 text-lg">點擊上方的按鈕，看看能不能把溫度（水位）加滿到 1280°C 吧！</p>
+                </div>
+            </div>
+        </section>
 
-    function zoomIn() {
-      scale += 0.1;
-      document.getElementById('qrcode').style.transform = `scale(${scale})`;
-    }
+        <!-- 輕鬆白話解說區 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">💡 剛剛發生了什麼事？</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-orange-500">
+                    <h3 class="font-bold text-xl mb-3">為什麼 20公分 ＋ 110V 會卡住？</h3>
+                    <p class="text-slate-600 leading-relaxed">
+                        空間變大，代表烤箱的「表面積」變大，熱量流失的「破洞」就變多了。<br><br>
+                        110V 的火力是固定的（小水龍頭）。當溫度到達 1100 度時，<b>漏出去的熱量 ＝ 灌進去的熱量</b>，互相抵消了！這時候不管你再燒幾個小時，溫度都絕對不會再上升。
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
+                    <h3 class="font-bold text-xl mb-3">解法：升級 220V 的大水龍頭</h3>
+                    <p class="text-slate-600 leading-relaxed">
+                        既然水桶的破洞（大空間散熱）無法避免，我們只能換一個<b>「水量超級大的水龍頭」</b>。<br><br>
+                        220V 可以提供 110V 兩倍以上的火力！灌進去的熱量遠大於漏掉的熱量，就能輕輕鬆鬆把溫度推上 1280 度，安全又快速。
+                    </p>
+                </div>
+            </div>
+        </section>
 
-    function zoomOut() {
-      if (scale > 0.2) {
-        scale -= 0.1;
-        document.getElementById('qrcode').style.transform = `scale(${scale})`;
-      }
-    }
+        <!-- 別人說可以的真相 -->
+        <section class="bg-slate-800 text-white rounded-3xl p-8 shadow-lg">
+            <h2 class="text-2xl font-bold mb-6 text-center text-orange-400">🤔 「可是別家老闆說，他的 110V 大電窯可以燒到 1280度耶？」</h2>
+            <p class="mb-6 text-slate-300 text-center">物理定律是無法被打破的。如果市面上有人說可以，通常是用了這三種方法（但我們不建議）：</p>
+            
+            <div class="space-y-4">
+                <div class="bg-slate-700/50 p-4 rounded-xl flex items-start">
+                    <div class="text-3xl mr-4 mt-1">🛑</div>
+                    <div>
+                        <h4 class="font-bold text-lg text-orange-300">方法一：極限硬操機器</h4>
+                        <p class="text-slate-300 text-sm mt-1">裡面不放任何東西（空窯），花十幾個小時硬燒。實際上你放了陶土進去後根本燒不到，而且非常傷機器、容易壞。</p>
+                    </div>
+                </div>
+                <div class="bg-slate-700/50 p-4 rounded-xl flex items-start">
+                    <div class="text-3xl mr-4 mt-1">🔥</div>
+                    <div>
+                        <h4 class="font-bold text-lg text-orange-300">方法二：把保溫層偷改薄</h4>
+                        <p class="text-slate-300 text-sm mt-1">為了讓內部空間變大，就把厚實的保溫磚改薄。結果就是外殼溫度飆高，不小心碰到會嚴重燙傷，非常危險！</p>
+                    </div>
+                </div>
+                <div class="bg-slate-700/50 p-4 rounded-xl flex items-start">
+                    <div class="text-3xl mr-4 mt-1">🔌</div>
+                    <div>
+                        <h4 class="font-bold text-lg text-orange-300">方法三：那根本不是普通的 110V 插頭</h4>
+                        <p class="text-slate-300 text-sm mt-1">他會要求你家裡要重新拉一條「超級粗的 110V 專用線」。既然都要請水電師傅重新拉線了，何不直接拉 220V 更好更穩定？</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    function generateQRCode() {
-      const date = document.getElementById('dateInput').value;
-      const number = document.getElementById('numberInput').value;
-      const text = `PH${number}114${date}1756000004e7000005265487241089402695pzHw66dBJ9TQr3UfmTUHXw==:**********:1:1:1`;
-      QRCode.toCanvas(document.getElementById('qrcodeCanvas'), text, function (error) {
-        if (error) console.error(error);
-      });
-    }
+        <div class="text-center mt-10">
+            <p class="text-slate-500 font-bold">我們堅持誠實標示，因為您的安全與作品的成功，才是最重要的事。</p>
+        </div>
 
-    // 預設產生一個 canvas 給 QRCode 使用
-    const canvas = document.createElement('canvas');
-    canvas.id = 'qrcodeCanvas';
-    document.getElementById('qrcode').appendChild(canvas);
-  </script>
+    </main>
+
+    <script>
+        let animationInterval;
+        
+        function startGame(type) {
+            // 清除之前的動畫
+            clearInterval(animationInterval);
+            
+            // UI 按鈕切換
+            document.querySelectorAll('.btn-select').forEach(btn => btn.classList.remove('active', 'bg-orange-600', 'text-white'));
+            document.getElementById('btn-' + type).classList.add('active', 'bg-orange-600', 'text-white');
+
+            // 取得 DOM
+            const tap = document.getElementById('tap');
+            const stream = document.getElementById('stream');
+            const bucket = document.getElementById('bucket');
+            const water = document.getElementById('water');
+            const tempDisplay = document.getElementById('temp-display');
+            const holesContainer = document.getElementById('holes-container');
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const sizeLabel = document.getElementById('bucket-size-label');
+
+            // 初始化與重置
+            water.style.transition = 'none';
+            water.style.height = '0%';
+            bucket.classList.remove('leaking');
+            stream.classList.remove('active');
+            holesContainer.innerHTML = '';
+            
+            setTimeout(() => { water.style.transition = 'height 0.1s linear'; }, 50);
+
+            // 設定情境參數
+            let targetTemp, targetWaterHeight, heatingSpeed, bucketWidth, tapColor, tapText, streamWidth;
+            let holes = []; // {left, bottom}
+
+            if (type === 1) {
+                // 15cm + 110V
+                targetTemp = 1280; targetWaterHeight = 100; heatingSpeed = 18;
+                bucketWidth = 120; tapColor = '#cbd5e1'; tapText = '110V'; streamWidth = 14;
+                holes = [{left: '10px', bottom: '20px'}]; // 1個洞
+                
+                sizeLabel.innerText = "規格: 15x15x15";
+                title.innerText = "⏳ 加熱中...";
+                title.className = "text-2xl font-bold text-orange-500 mb-2";
+                desc.innerText = "小空間散熱慢（破洞少），火力剛好可以補滿！";
+
+            } else if (type === 2) {
+                // 20cm + 110V
+                targetTemp = 1100; targetWaterHeight = 82; heatingSpeed = 15;
+                bucketWidth = 180; tapColor = '#cbd5e1'; tapText = '110V'; streamWidth = 14;
+                holes = [{left: '10px', bottom: '20px'}, {left: '80px', bottom: '10px'}, {left: '150px', bottom: '30px'}]; // 3個洞
+                
+                sizeLabel.innerText = "規格: 20x20x20";
+                title.innerText = "⏳ 加熱中...";
+                title.className = "text-2xl font-bold text-orange-500 mb-2";
+                desc.innerText = "空間變大散熱變快（破洞變多），110V 的火力開始吃力了...";
+
+            } else if (type === 3) {
+                // 20cm + 220V
+                targetTemp = 1280; targetWaterHeight = 100; heatingSpeed = 35;
+                bucketWidth = 180; tapColor = '#fca5a5'; tapText = '220V'; streamWidth = 28;
+                holes = [{left: '10px', bottom: '20px'}, {left: '80px', bottom: '10px'}, {left: '150px', bottom: '30px'}]; // 3個洞
+                
+                sizeLabel.innerText = "規格: 20x20x20";
+                title.innerText = "🚀 火力全開中...";
+                title.className = "text-2xl font-bold text-red-500 mb-2";
+                desc.innerText = "升級 220V 大火力！就算破洞多，猛烈灌水一樣能裝滿！";
+            }
+
+            // 套用視覺設定
+            bucket.style.width = bucketWidth + 'px';
+            tap.style.background = tapColor;
+            tap.innerText = tapText;
+            stream.style.width = streamWidth + 'px';
+            
+            // 建立破洞
+            holes.forEach((pos, index) => {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.style.left = pos.left;
+                hole.style.bottom = pos.bottom;
+                
+                const leak = document.createElement('div');
+                leak.className = 'leak-stream';
+                leak.style.animationDelay = (index * 0.3) + 's'; // 讓多個洞的漏水時間錯開
+                
+                const text = document.createElement('div');
+                text.className = 'leak-text';
+                text.innerText = '漏水中';
+                text.style.animationDelay = (index * 0.3) + 's'; // 文字動畫也跟著錯開
+
+                hole.appendChild(leak);
+                hole.appendChild(text);
+                holesContainer.appendChild(hole);
+            });
+
+            // 開始動畫流程
+            setTimeout(() => {
+                stream.classList.add('active'); // 打開水龍頭
+                bucket.classList.add('leaking'); // 開始漏水
+                
+                let currentTemp = 25;
+                let currentHeight = 0;
+
+                animationInterval = setInterval(() => {
+                    if (currentTemp < targetTemp) {
+                        // 升溫
+                        currentTemp += heatingSpeed;
+                        if (currentTemp > targetTemp) currentTemp = targetTemp;
+                        
+                        // 計算高度
+                        currentHeight = (currentTemp / 1280) * 100;
+                        if (currentHeight > targetWaterHeight) currentHeight = targetWaterHeight;
+
+                        tempDisplay.innerText = Math.floor(currentTemp) + '°C';
+                        water.style.height = currentHeight + '%';
+                        
+                        // 隨著溫度變色
+                        if (currentTemp > 1000) {
+                            water.style.background = 'linear-gradient(to top, #dc2626, #fcd34d)';
+                        } else {
+                            water.style.background = 'linear-gradient(to top, #ef4444, #f97316)';
+                        }
+
+                    } else {
+                        // 抵達目標溫度
+                        clearInterval(animationInterval);
+                        
+                        if (type === 1) {
+                            title.innerText = "✅ 完美達標 1280°C！";
+                            title.className = "text-2xl font-bold text-green-600 mb-2";
+                            desc.innerText = "小空間配 110V 剛剛好，順利達到高溫釉的溫度。";
+                            stream.classList.remove('active'); // 滿了關水
+                        } else if (type === 2) {
+                            title.innerText = "❌ 卡在 1100°C 上不去了！";
+                            title.className = "text-2xl font-bold text-red-600 mb-2";
+                            desc.innerHTML = "漏出去的熱量 ＝ 灌進去的熱量。<b>此時達到極限，燒再久都不會變高了！</b>";
+                            // 水龍頭繼續開著，因為卡住了
+                            water.style.transition = 'height 0.3s ease-in-out';
+                            // 微微震動代表卡住
+                            let toggle = false;
+                            animationInterval = setInterval(() => {
+                                toggle = !toggle;
+                                water.style.height = toggle ? (targetWaterHeight + 1) + '%' : (targetWaterHeight - 1) + '%';
+                            }, 300);
+                        } else if (type === 3) {
+                            title.innerText = "🚀 輕鬆達標 1280°C！";
+                            title.className = "text-2xl font-bold text-blue-600 mb-2";
+                            desc.innerText = "這就是為什麼 20公分以上的大空間，我們強烈建議一定要用 220V 的原因！";
+                            stream.classList.remove('active'); // 滿了關水
+                        }
+                    }
+                }, 50);
+
+            }, 300); // 稍微延遲讓桶子縮放完畢再注水
+        }
+
+        // 網頁載入時預設執行第一個情境
+        window.onload = () => {
+            setTimeout(() => startGame(1), 500);
+        };
+    </script>
 </body>
 </html>

@@ -160,7 +160,7 @@ function getPointIndex(_0x28c735) {
   const _0x3257ce = chart.getElementsAtEventForMode(
     _0x28c735,
     "nearest",
-    { intersect: false, radius: 40 },
+    { intersect: false, radius: 15 },
     false,
   )[0x0];
   return _0x3257ce ? _0x3257ce.index : null;

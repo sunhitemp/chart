@@ -33,13 +33,13 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
       <header class="app-header" id="part-header">
         <div class="header-logo">
           <a href="https://www.sunhitemp.com"
-            ><img src="SUNRISE10D2.jpg" alt="陽昇電熱有限公司" height="40"
+            ><img src="SUNRISE10D2.jpg" alt="陽昇電熱有限公司" height="60"
           /></a>
         </div>
         <div class="header-title">
           <h1>陽昇電熱 溫度曲線圖</h1>
           <span class="copyright"
-            >© 2015-2025 陽昇電熱有限公司 (03-3624888 / 0966-661-288)</span
+            >© 2015-2025 陽昇電熱有限公司<br />(03-3624888 / 0966-661-288)</span
           >
         </div>
       </header>
@@ -70,9 +70,7 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
           </div>
         </div>
         <div class="btn-group-row">
-          <button id="example4" class="btn btn-outline">
-            開始<br />(Start)
-          </button>
+          <button id="example4" class="btn btn-outline">開始</button>
           <button id="addSegment" class="btn btn-danger">
             增加段數<br />(+)
           </button>
@@ -80,7 +78,7 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
             減少段數<br />(-)
           </button>
           <button id="test3" class="btn btn-warning">檢查錯誤</button>
-          <button id="outdate" class="btn btn-info">流程圖</button>
+          <button id="outdate" class="btn btn-info">設定方法</button>
           <button id="restartApp" class="btn btn-dark">重新載入</button>
         </div>
         <!-- 隱藏但保留 JS 邏輯所需 -->
@@ -97,10 +95,10 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
         <div id="chart-container">
           <div class="zoom-controls">
             <button id="zoomInBtn" class="btn-zoom" title="增加段數">
-              + 段數
+              + 段
             </button>
             <button id="zoomOutBtn" class="btn-zoom" title="減少段數">
-              - 段數
+              - 段
             </button>
           </div>
           <div class="snap-control">

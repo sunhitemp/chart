@@ -492,6 +492,16 @@ canvas {
   transform: scale(1.05);
 }
 
+.fullscreen-mode .btn-fullscreen {
+  bottom: auto;
+  top: 15px;
+  right: 15px;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+}
+
 /* CSS Fullscreen Fallback (100% Reliable across all devices) */
 .fullscreen-mode #part-chart {
   position: fixed !important;
@@ -518,17 +528,29 @@ canvas {
 @media (max-width: 900px) {
   #part-header {
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 1rem;
     align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
+    justify-content: flex-start;
+    padding: 0.5rem 1rem;
+  }
+  .header-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .header-title h1 {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     white-space: nowrap;
+    margin: 0 0 4px 0;
+  }
+  .copyright {
+    font-size: 0.8rem;
+    white-space: pre-line;
+    line-height: 1.2;
+    text-align: left;
   }
   .header-logo img {
-    height: 30px;
+    height: 60px;
   }
   .examples-header {
     flex-direction: column;

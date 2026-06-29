@@ -204,11 +204,11 @@ function doDrag(_0x6dac00) {
   if (draggingPoint === null) return;
   const autoSnap = document.getElementById("autoSnap")?.checked;
   const { x: rawTouchX, y: rawTouchY } = getXY(_0x6dac00);
-  
+
   // Apply offset so point doesn't jump
   const _0x56f6ee = rawTouchX + dragOffsetX;
   const _0x5109f8 = rawTouchY + dragOffsetY;
-  
+
   const rawX = chart.scales.x.getValueForPixel(_0x56f6ee);
   const rawY = chart.scales.y.getValueForPixel(_0x5109f8);
   const _0x20eeae = autoSnap ? Math.round(rawX / 10) * 10 : Math.floor(rawX),
@@ -1012,21 +1012,36 @@ window.addEventListener("mouseup", (e) => {
   }
 });
 
-// Fullscreen Toggle Logic (CSS Fallback for 100% Reliability)
+// Fullscreen Toggle Logic (Hybrid: Native API for Orientation Lock + CSS Fallback)
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 if (fullscreenBtn) {
   fullscreenBtn.addEventListener("click", () => {
-    document.body.classList.toggle("fullscreen-mode");
+    const isFull = document.body.classList.contains("fullscreen-mode");
+    const container = document.getElementById("part-chart");
 
-    if (document.body.classList.contains("fullscreen-mode")) {
+    if (!isFull) {
+      document.body.classList.add("fullscreen-mode");
       fullscreenBtn.textContent = "⛶ 退出全螢幕";
-      // Lock orientation to landscape on mobile
-      try {
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock("landscape").catch(e => console.log(e));
-        }
-      } catch (err) {}
+
+      const tryLock = () => {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock("landscape").catch(() => {});
+          }
+        } catch (e) {}
+      };
+
+      if (container.requestFullscreen) {
+        container
+          .requestFullscreen()
+          .then(tryLock)
+          .catch(() => {});
+      } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+        tryLock();
+      }
     } else {
+      document.body.classList.remove("fullscreen-mode");
       fullscreenBtn.textContent = "⛶ 全螢幕";
       // Unlock orientation
       try {
@@ -1034,6 +1049,11 @@ if (fullscreenBtn) {
           screen.orientation.unlock();
         }
       } catch (err) {}
+
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
     }
 
     // Resize chart to fill new container

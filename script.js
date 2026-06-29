@@ -800,7 +800,7 @@ function updateFloatingSummary() {
       (_0x56825c.style.zIndex = "1000"),
       (_0x56825c.style.display = "grid"),
       (_0x56825c.style.gridTemplateColumns =
-        "repeat(" + _0x19f466 + ", 100px)"),
+        "repeat(" + _0x19f466 + ", 120px)"),
       (_0x56825c.style.gap = "12px"),
       (_0x56825c.style.maxHeight = "80vh"),
       (_0x56825c.style.overflowY = "auto"),
@@ -862,6 +862,78 @@ function updateFloatingSummary() {
       _0x56825c.appendChild(_0x2bdc4c));
   }
 }
+const ledDict = {
+    "0": 63, "1": 6, "2": 91, "3": 79, "4": 102, 
+    "5": 109, "6": 125, "7": 7, "8": 127, "9": 111,
+    "P": 115, "t": 120, "T": 120, "N": 55, "n": 55, "M": 43, "S": 109, 
+    "V": 42, "U": 62, "O": 63, "o": 63, "E": 121, 
+    "d": 94, "_": 8, "-": 64, " ": 0
+};
+
+function parseLEDText(str) {
+  if (str === null || str === undefined) str = "";
+  // 將特定組合轉為目標字元
+  let s = str
+    .toString()
+    .replace("OUT_", "oUt")
+    .replace("tN_", "tM_")
+    .replace("PtN", "Ptn")
+    .replace("END", "End");
+
+  let blocks = [];
+  for (let i = 0; i < s.length; i++) {
+    let char = s[i];
+    let hasDP = false;
+    if (i + 1 < s.length && s[i + 1] === ".") {
+      hasDP = true;
+      i++; // 跳過小數點
+    }
+    blocks.push({ char, hasDP });
+  }
+
+  // 如果字數不足 4 碼，向左補空白
+  while (blocks.length < 4) {
+    blocks.unshift({ char: " ", hasDP: false });
+  }
+  // 確保只取最後 4 碼
+  if (blocks.length > 4) {
+    blocks = blocks.slice(-4);
+  }
+  return blocks;
+}
+
+function drawSingleLED(block, activeColor) {
+  let charCode = ledDict[block.char] !== undefined ? ledDict[block.char] : 0;
+  if (block.hasDP) charCode |= 128;
+
+  const offColor = "#1a1a1a";
+  const getC = (val) => (charCode & val ? activeColor : offColor);
+  const getF = (val) =>
+    charCode & val ? `drop-shadow(0 0 4px ${activeColor})` : "none";
+
+  // 以 SVG 繪製七段顯示器
+  return `
+    <svg viewBox="0 0 100 150" style="width: 20px; height: 35px; flex-shrink: 0; margin: 0 1px;">
+        <!-- A (Top) -->
+        <polygon points="22,10 78,10 70,22 30,22" fill="${getC(1)}" style="filter:${getF(1)}; transition: fill 0.2s" />
+        <!-- B (Top Right) -->
+        <polygon points="80,12 80,68 68,62 68,24" fill="${getC(2)}" style="filter:${getF(2)}; transition: fill 0.2s" />
+        <!-- C (Bottom Right) -->
+        <polygon points="80,72 80,128 68,116 68,78" fill="${getC(4)}" style="filter:${getF(4)}; transition: fill 0.2s" />
+        <!-- D (Bottom) -->
+        <polygon points="22,130 78,130 70,118 30,118" fill="${getC(8)}" style="filter:${getF(8)}; transition: fill 0.2s" />
+        <!-- E (Bottom Left) -->
+        <polygon points="20,72 20,128 32,116 32,78" fill="${getC(16)}" style="filter:${getF(16)}; transition: fill 0.2s" />
+        <!-- F (Top Left) -->
+        <polygon points="20,12 20,68 32,62 32,24" fill="${getC(32)}" style="filter:${getF(32)}; transition: fill 0.2s" />
+        <!-- G (Middle) -->
+        <polygon points="22,70 30,64 70,64 78,70 70,76 30,76" fill="${getC(64)}" style="filter:${getF(64)}; transition: fill 0.2s" />
+        <!-- DP (Decimal Point) -->
+        <circle cx="92" cy="125" r="7" fill="${getC(128)}" style="filter:${getF(128)}; transition: fill 0.2s" />
+    </svg>
+    `;
+}
+
 function createBox(
   _0x414230,
   _0x409eab,
@@ -869,28 +941,32 @@ function createBox(
   _0x526efd = "#f2ff00",
   _0x45b20b = "#333",
 ) {
-  const _0x312f6c = document.createElement("div");
-  return (
-    (_0x312f6c.style.display = "flex"),
-    (_0x312f6c.style.flexDirection = "column"),
-    (_0x312f6c.style.alignItems = "center"),
-    (_0x312f6c.style.justifyContent = "center"),
-    (_0x312f6c.style.background = "#000"),
-    (_0x312f6c.style.borderRadius = "8px"),
-    (_0x312f6c.style.width = "100px"),
-    (_0x312f6c.style.height = "100px"),
-    (_0x312f6c.innerHTML =
-      '\n\n\t<div style="font-size: 24px; color: ' +
-      _0x336e42 +
-      "\x22>" +
-      _0x414230 +
-      '</div>\n    <div style="font-size: 20px; color: ' +
-      _0x526efd +
-      "\x22>" +
-      _0x409eab +
-      "</div>\n\t\n\t\n  "),
-    _0x312f6c
-  );
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.alignItems = "center";
+  container.style.justifyContent = "center";
+  container.style.background = "#000";
+  container.style.borderRadius = "8px";
+  container.style.padding = "6px 8px";
+  container.style.gap = "6px";
+  container.style.width = "120px";
+  container.style.boxSizing = "border-box";
+  container.style.boxShadow = "inset 0 0 10px rgba(255,255,255,0.05)";
+
+  const topBlocks = parseLEDText(_0x414230);
+  const bottomBlocks = parseLEDText(_0x409eab);
+
+  let topHTML = '<div style="display: flex;">';
+  topBlocks.forEach((b) => (topHTML += drawSingleLED(b, _0x336e42)));
+  topHTML += "</div>";
+
+  let bottomHTML = '<div style="display: flex;">';
+  bottomBlocks.forEach((b) => (bottomHTML += drawSingleLED(b, _0x526efd)));
+  bottomHTML += "</div>";
+
+  container.innerHTML = topHTML + bottomHTML;
+  return container;
 }
 function loadExample(_0x5b3c3b) {
   const _0x5d08ca = exampleData[_0x5b3c3b];

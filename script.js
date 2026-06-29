@@ -229,9 +229,8 @@ let dragRAF = null;
   }),
   canvas.addEventListener("mouseup", endDrag),
   (() => {
-    let longPressTimer = null;
     let initialPinchDistance = null;
-    let touchMode = "none"; // "normal", "pan", "pinch"
+    let touchMode = "none"; // "dragPoint", "panChart", "pinch"
     let lastPanX = 0;
 
     function getDistance(touches) {
@@ -248,25 +247,17 @@ let dragRAF = null;
       if (touches.length === 2) {
         touchMode = "pinch";
         initialPinchDistance = getDistance(touches);
-        clearTimeout(longPressTimer);
       } else if (touches.length === 1) {
-        touchMode = "normal";
         lastPanX = touches[0].clientX;
         
-        // Timer for long-press to enter "Pan Chart" mode
-        longPressTimer = setTimeout(() => {
-          if (touchMode === "normal") {
-            touchMode = "pan";
-            try {
-              navigator.vibrate(50);
-            } catch (err) {}
-            // Cancel point dragging if we enter pan mode
-            endDrag();
-          }
-        }, 400);
-
-        // Immediately act as a normal click/drag for points
+        // Check if we hit a point
         startDrag(e);
+        
+        if (draggingPoint !== null) {
+          touchMode = "dragPoint";
+        } else {
+          touchMode = "panChart";
+        }
       }
     });
 
@@ -281,18 +272,13 @@ let dragRAF = null;
           chart.update("none");
         }
         initialPinchDistance = currentDistance;
-      } else if (touchMode === "normal") {
-        // If they swipe quickly, it's a normal point drag, so cancel the long-press pan
-        if (Math.abs(touches[0].clientX - lastPanX) > 10) {
-          clearTimeout(longPressTimer);
-        }
-        // If they touched a point, drag it
+      } else if (touchMode === "dragPoint") {
         if (draggingPoint !== null) {
           e.preventDefault();
           if (dragRAF) cancelAnimationFrame(dragRAF);
           dragRAF = requestAnimationFrame(() => doDrag(e));
         }
-      } else if (touchMode === "pan" && touches.length === 1) {
+      } else if (touchMode === "panChart" && touches.length === 1) {
         e.preventDefault();
         const dx = touches[0].clientX - lastPanX;
         lastPanX = touches[0].clientX;
@@ -309,7 +295,6 @@ let dragRAF = null;
     });
 
     canvas.addEventListener("touchend", (e) => {
-      clearTimeout(longPressTimer);
       endDrag();
       touchMode = "none";
     });
@@ -989,3 +974,36 @@ window.addEventListener("mouseup", (e) => {
     canvas.style.cursor = "default";
   }
 });
+
+// Fullscreen Toggle Logic
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener("click", () => {
+    const container = document.getElementById("part-chart");
+    if (!document.fullscreenElement) {
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+      } else if (container.msRequestFullscreen) {
+        container.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (document.fullscreenElement) {
+      fullscreenBtn.textContent = "⛶ 退出全螢幕";
+    } else {
+      fullscreenBtn.textContent = "⛶ 全螢幕";
+    }
+  });
+}

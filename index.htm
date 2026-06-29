@@ -1,82 +1,101 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>陽昇電熱溫度曲線圖20250701</title>
-  <!-- 載入外部 CSS 樣式 -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body oncontextmenu ="return false">  
+<body oncontextmenu="return false">
+
+<!-- 反調試機制 (暫時註解關閉) -->
 <script>
+/*
 document.addEventListener('keydown', function (e) {
-    if (e.key === "F12") {
-        // 可選：防止打開開發者工具
-        e.preventDefault();
-        e.stopPropagation();
-
-        // 自動跳轉到其他網頁
-        window.location.href = "https://www.sunhitemp.com"; // 這裡改成你要移動的網址
-    }
+    if (e.key === 'F12') { e.preventDefault(); e.stopPropagation(); window.location.href = 'https://www.sunhitemp.com'; }
 });
-</script>
-<script>
 let devtoolsOpen = false;
-
 const element = new Image();
-Object.defineProperty(element, 'id', {
-    get: function () {
-        devtoolsOpen = true;
-        window.location.href = "https://www.sunhitemp.com"; // 偵測開啟即跳轉
-    }
-});
-
-setInterval(function () {
-    devtoolsOpen = false;
-    console.log(element);
-    if (devtoolsOpen) {
-        // 若開啟控制台會被偵測
-    }
-}, 1000);
+Object.defineProperty(element, 'id', { get: function () { devtoolsOpen = true; window.location.href = 'https://www.sunhitemp.com'; } });
+setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
+*/
 </script>
 
-	
-  <div id="examples" style="float:left; margin-right:20px;">
-  <a href="https://www.sunhitemp.com/"><img src="SUNRISE10D2.jpg" width="200" height="53" title="陽昇電熱有限公司" alt="陽昇電熱有限公司"/></a> <br>範例程式(參考值)
-  <button id="example1">素燒</button>
-    <button id="example2">釉燒</button>
-    <button id="example3">熱處理</button>
-	<div div>
-	  <div id="controls">
-	  <label for="maxTemp">
-	    <button id="example4">開始Start</button>
-        <button id="addSegment">增加段數(+)</button>
-        <button id="removeSegment">減少段數(-)</button>
-        <button id="test3">檢查錯誤</button>
-		<button id="outdate">流程圖</button>
-        <BR>最大溫度：</label>
-	  <input type="number" id="maxTemp" value="1300" min="100" max="2000" />°C
-	 
-	  </div>
-
-</div>
-  <div id="error-message" style="color: red; font-weight: bold; margin-top: 10px;"></div>
-  <!-- 控制區：設定最大溫度與時間延展速率 --><!-- 圖表與摘要容器 -->
-  <div id="chart-wrapper">
-    <!-- 圖表區域 -->
-    <div id="chart-container">
-      <canvas id="lineChart"></canvas>
+<div class="app-container">
+  <header class="app-header">
+    <div class="header-logo">
+      <a href="https://www.sunhitemp.com"><img src="SUNRISE10D2.jpg" alt="陽昇電熱有限公司" height="40"></a>
     </div>
-    <!-- 段落摘要欄 -->程式設定:<BR>
-    <div id="segment-summary"></div>
-  </div>
-	  <input type="number" id="timeExtendRate" max="1" min="1" value="60" readonly="readonly" />
-</h2><!-- 新增範例按鈕區 --><span id="i00c4">© 2015-2025 陽昇電熱有限公司版權所有 03-3624888 行動:0966-661-288 </span>
- 
-  <!-- 載入 Chart.js 函式庫 -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- 載入外部 JS 腳本 -->
-  <script src="script.js"></script>
-  
+    <div class="header-title">
+      <h1>陽昇電熱 溫度曲線圖</h1>
+      <span class="copyright">© 2015-2025 陽昇電熱有限公司 (03-3624888 / 0966-661-288)</span>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- 左側面板 (控制區) -->
+    <aside class="sidebar">
+      <div class="card">
+        <h3>範例程式 (預設)</h3>
+        <div class="btn-group">
+          <button id="example1" class="btn btn-primary">素燒</button>
+          <button id="example2" class="btn btn-secondary">釉燒</button>
+          <button id="example3" class="btn btn-accent">熱處理</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>控制與操作</h3>
+        <div class="input-group">
+          <label for="maxTemp">最大溫度 (°C)</label>
+          <input type="number" id="maxTemp" value="1300" min="100" max="2000">
+        </div>
+        <div class="btn-group-grid">
+          <button id="example4" class="btn btn-outline">開始 (Start)</button>
+          <button id="addSegment" class="btn btn-danger">增加段數 (+)</button>
+          <button id="removeSegment" class="btn btn-success">減少段數 (-)</button>
+          <button id="test3" class="btn btn-warning">檢查錯誤</button>
+          <button id="outdate" class="btn btn-info">流程圖</button>
+          <button id="restartApp" class="btn btn-dark">重新載入</button>
+        </div>
+        <!-- 隱藏但保留 JS 邏輯所需 -->
+        <input type="number" id="timeExtendRate" value="60" style="display:none;"> 
+      </div>
+      
+      <div id="error-message" class="error-msg"></div>
+    </aside>
+
+    <!-- 右側主要區 (圖表與數據) -->
+    <section class="content-area">
+      <div class="card chart-card">
+        <div id="chart-container">
+          <div class="zoom-controls">
+            <button id="zoomInBtn" class="btn-zoom" title="放大">+</button>
+            <button id="zoomOutBtn" class="btn-zoom" title="縮小">-</button>
+          </div>
+          <div class="snap-control">
+            <input type="checkbox" id="autoSnap" checked>
+            <label for="autoSnap">自動吸附格子</label>
+          </div>
+          <!-- Canvas 加入 CSS touch-action 屬性防誤滑 -->
+          <canvas id="lineChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="card summary-card">
+        <div class="summary-header">
+          <h3>程式設定 (數據面板)</h3>
+        </div>
+        <div id="segment-summary"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

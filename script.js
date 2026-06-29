@@ -228,15 +228,93 @@ let dragRAF = null;
     dragRAF = requestAnimationFrame(() => doDrag(_0x4bb382));
   }),
   canvas.addEventListener("mouseup", endDrag),
-  canvas.addEventListener("touchstart", (_0x4005ec) => {
-    (_0x4005ec.preventDefault(), startDrag(_0x4005ec));
-  }),
-  canvas.addEventListener("touchmove", (_0x24dfbf) => {
-    _0x24dfbf.preventDefault();
-    if (dragRAF) cancelAnimationFrame(dragRAF);
-    dragRAF = requestAnimationFrame(() => doDrag(_0x24dfbf));
-  }),
-  canvas.addEventListener("touchend", endDrag),
+  (() => {
+    let longPressTimer = null;
+    let initialPinchDistance = null;
+    let touchMode = "none"; // "drag", "pan", "pinch", "pending"
+    let lastPanX = 0;
+
+    function getDistance(touches) {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault(); // only prevent default aggressively for gestures
+      }
+      const touches = e.touches;
+      if (touches.length === 2) {
+        touchMode = "pinch";
+        initialPinchDistance = getDistance(touches);
+        clearTimeout(longPressTimer);
+      } else if (touches.length === 1) {
+        touchMode = "pending";
+        lastPanX = touches[0].clientX;
+        const ptIndex = getPointIndex(e);
+        if (ptIndex !== null) {
+          longPressTimer = setTimeout(() => {
+            if (touchMode === "pending") {
+              touchMode = "drag";
+              try {
+                navigator.vibrate(50);
+              } catch (err) {}
+              startDrag(e);
+            }
+          }, 400);
+        } else {
+          touchMode = "pan";
+        }
+      }
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+      const touches = e.touches;
+      if (touchMode === "pinch" && touches.length === 2) {
+        e.preventDefault();
+        const currentDistance = getDistance(touches);
+        const scale = initialPinchDistance / currentDistance;
+        if (scale > 0.5 && scale < 2.0) {
+          chart.options.scales.x.max *= scale;
+          chart.update("none");
+        }
+        initialPinchDistance = currentDistance;
+      } else if (touchMode === "drag") {
+        e.preventDefault();
+        if (dragRAF) cancelAnimationFrame(dragRAF);
+        dragRAF = requestAnimationFrame(() => doDrag(e));
+      } else if (touchMode === "pending") {
+        if (Math.abs(touches[0].clientX - lastPanX) > 10) {
+          clearTimeout(longPressTimer);
+          touchMode = "pan";
+        }
+      }
+
+      if (touchMode === "pan" && touches.length === 1) {
+        e.preventDefault();
+        const dx = touches[0].clientX - lastPanX;
+        lastPanX = touches[0].clientX;
+        const startXMin = chart.options.scales.x.min || 0;
+        const startXMax = chart.options.scales.x.max;
+        const pixelsPerMinute = canvas.clientWidth / (startXMax - startXMin);
+        const timeShift = -(dx / pixelsPerMinute);
+        const newMin = Math.max(0, startXMin + timeShift);
+        const actualShift = newMin - startXMin;
+        chart.options.scales.x.min = newMin;
+        chart.options.scales.x.max = startXMax + actualShift;
+        chart.update("none");
+      }
+    });
+
+    canvas.addEventListener("touchend", (e) => {
+      clearTimeout(longPressTimer);
+      if (touchMode === "drag") {
+        endDrag();
+      }
+      touchMode = "none";
+    });
+  })(),
   canvas.addEventListener("dblclick", (_0x3da710) => {
     const _0x49041f = chart.getElementsAtEventForMode(
       _0x3da710,

@@ -160,8 +160,8 @@ function getPointIndex(_0x28c735) {
   const _0x3257ce = chart.getElementsAtEventForMode(
     _0x28c735,
     "nearest",
-    { intersect: !![] },
-    ![],
+    { intersect: false, radius: 40 },
+    false,
   )[0x0];
   return _0x3257ce ? _0x3257ce.index : null;
 }
@@ -249,14 +249,29 @@ let dragRAF = null;
         initialPinchDistance = getDistance(touches);
       } else if (touches.length === 1) {
         lastPanX = touches[0].clientX;
-        
+
         // Check if we hit a point
         startDrag(e);
-        
+
         if (draggingPoint !== null) {
           touchMode = "dragPoint";
         } else {
-          touchMode = "panChart";
+          // Verify if the touch is in the "middle" safe zone for panning
+          const rect = canvas.getBoundingClientRect();
+          const touchX = touches[0].clientX - rect.left;
+          const touchY = touches[0].clientY - rect.top;
+
+          // Margin of 20% on all sides. Panning only allowed in the center 60%
+          const isSafeX =
+            touchX > rect.width * 0.2 && touchX < rect.width * 0.8;
+          const isSafeY =
+            touchY > rect.height * 0.2 && touchY < rect.height * 0.8;
+
+          if (isSafeX && isSafeY) {
+            touchMode = "panChart";
+          } else {
+            touchMode = "none";
+          }
         }
       }
     });

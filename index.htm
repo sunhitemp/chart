@@ -45,11 +45,13 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
       </header>
 
       <div class="card" id="part-examples">
-        <h3>範例程式 (預設)</h3>
-        <div class="btn-group">
-          <button id="example1" class="btn btn-primary">素燒</button>
-          <button id="example2" class="btn btn-secondary">釉燒</button>
-          <button id="example3" class="btn btn-accent">熱處理</button>
+        <div class="examples-header">
+          <h3>範例程式</h3>
+          <div class="btn-group">
+            <button id="example1" class="btn btn-primary">素燒</button>
+            <button id="example2" class="btn btn-secondary">釉燒</button>
+            <button id="example3" class="btn btn-accent">熱處理</button>
+          </div>
         </div>
       </div>
 
@@ -68,10 +70,14 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
           </div>
         </div>
         <div class="btn-group-row">
-          <button id="example4" class="btn btn-outline">開始 (Start)</button>
-          <button id="addSegment" class="btn btn-danger">增加段數 (+)</button>
+          <button id="example4" class="btn btn-outline">
+            開始<br />(Start)
+          </button>
+          <button id="addSegment" class="btn btn-danger">
+            增加段數<br />(+)
+          </button>
           <button id="removeSegment" class="btn btn-success">
-            減少段數 (-)
+            減少段數<br />(-)
           </button>
           <button id="test3" class="btn btn-warning">檢查錯誤</button>
           <button id="outdate" class="btn btn-info">流程圖</button>
@@ -97,7 +103,9 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
             <input type="checkbox" id="autoSnap" checked />
             <label for="autoSnap">自動吸附格子</label>
           </div>
-          <button id="fullscreenBtn" class="btn-fullscreen" title="全螢幕切換">⛶ 全螢幕</button>
+          <button id="fullscreenBtn" class="btn-fullscreen" title="全螢幕切換">
+            ⛶ 全螢幕
+          </button>
           <!-- Canvas 加入 CSS touch-action 屬性防誤滑 -->
           <canvas id="lineChart"></canvas>
         </div>

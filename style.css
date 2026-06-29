@@ -143,10 +143,38 @@ a {
   flex-wrap: wrap;
 }
 
-.btn-group-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.btn-group-row {
+  display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap; /* allow wrapping if screen gets too small, but naturally forms a row */
+}
+
+.controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+.controls-header h3 {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.inline-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0 !important;
+}
+.inline-input label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+.inline-input input {
+  width: 90px;
+  padding: 0.25rem 0.5rem;
 }
 
 .btn {
@@ -438,8 +466,8 @@ canvas {
   .header-title {
     text-align: center;
   }
-  .btn-group-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+  .btn-group-row {
+    justify-content: center;
   }
 }
 
@@ -451,7 +479,7 @@ canvas {
     grid-template-rows: auto 1fr auto;
     height: 100vh;
     grid-template-areas:
-      "examples controls"
+      "controls examples"
       "chart data"
       "header header";
   }
@@ -489,8 +517,8 @@ canvas {
 }
 
 @media (max-width: 500px) {
-  .btn-group-grid {
-    grid-template-columns: 1fr 1fr;
+  .btn-group-row {
+    flex-direction: column;
   }
 
   .chart-card {

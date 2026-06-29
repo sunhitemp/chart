@@ -54,12 +54,20 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
       </div>
 
       <div class="card" id="part-controls">
-        <h3>控制與操作</h3>
-        <div class="input-group">
-          <label for="maxTemp">最大溫度 (°C)</label>
-          <input type="number" id="maxTemp" value="1300" min="100" max="2000" />
+        <div class="controls-header">
+          <h3>控制與操作</h3>
+          <div class="input-group inline-input">
+            <label for="maxTemp">最大溫度 (°C)</label>
+            <input
+              type="number"
+              id="maxTemp"
+              value="1300"
+              min="100"
+              max="2000"
+            />
+          </div>
         </div>
-        <div class="btn-group-grid">
+        <div class="btn-group-row">
           <button id="example4" class="btn btn-outline">開始 (Start)</button>
           <button id="addSegment" class="btn btn-danger">增加段數 (+)</button>
           <button id="removeSegment" class="btn btn-success">

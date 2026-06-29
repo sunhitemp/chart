@@ -231,7 +231,7 @@ let dragRAF = null;
   (() => {
     let longPressTimer = null;
     let initialPinchDistance = null;
-    let touchMode = "none"; // "drag", "pan", "pinch", "pending"
+    let touchMode = "none"; // "normal", "pan", "pinch"
     let lastPanX = 0;
 
     function getDistance(touches) {
@@ -242,7 +242,7 @@ let dragRAF = null;
 
     canvas.addEventListener("touchstart", (e) => {
       if (e.touches.length > 1) {
-        e.preventDefault(); // only prevent default aggressively for gestures
+        e.preventDefault(); // prevent default aggressively for pinch
       }
       const touches = e.touches;
       if (touches.length === 2) {
@@ -250,22 +250,23 @@ let dragRAF = null;
         initialPinchDistance = getDistance(touches);
         clearTimeout(longPressTimer);
       } else if (touches.length === 1) {
-        touchMode = "pending";
+        touchMode = "normal";
         lastPanX = touches[0].clientX;
-        const ptIndex = getPointIndex(e);
-        if (ptIndex !== null) {
-          longPressTimer = setTimeout(() => {
-            if (touchMode === "pending") {
-              touchMode = "drag";
-              try {
-                navigator.vibrate(50);
-              } catch (err) {}
-              startDrag(e);
-            }
-          }, 400);
-        } else {
-          touchMode = "pan";
-        }
+        
+        // Timer for long-press to enter "Pan Chart" mode
+        longPressTimer = setTimeout(() => {
+          if (touchMode === "normal") {
+            touchMode = "pan";
+            try {
+              navigator.vibrate(50);
+            } catch (err) {}
+            // Cancel point dragging if we enter pan mode
+            endDrag();
+          }
+        }, 400);
+
+        // Immediately act as a normal click/drag for points
+        startDrag(e);
       }
     });
 
@@ -280,18 +281,18 @@ let dragRAF = null;
           chart.update("none");
         }
         initialPinchDistance = currentDistance;
-      } else if (touchMode === "drag") {
-        e.preventDefault();
-        if (dragRAF) cancelAnimationFrame(dragRAF);
-        dragRAF = requestAnimationFrame(() => doDrag(e));
-      } else if (touchMode === "pending") {
+      } else if (touchMode === "normal") {
+        // If they swipe quickly, it's a normal point drag, so cancel the long-press pan
         if (Math.abs(touches[0].clientX - lastPanX) > 10) {
           clearTimeout(longPressTimer);
-          touchMode = "pan";
         }
-      }
-
-      if (touchMode === "pan" && touches.length === 1) {
+        // If they touched a point, drag it
+        if (draggingPoint !== null) {
+          e.preventDefault();
+          if (dragRAF) cancelAnimationFrame(dragRAF);
+          dragRAF = requestAnimationFrame(() => doDrag(e));
+        }
+      } else if (touchMode === "pan" && touches.length === 1) {
         e.preventDefault();
         const dx = touches[0].clientX - lastPanX;
         lastPanX = touches[0].clientX;
@@ -309,9 +310,7 @@ let dragRAF = null;
 
     canvas.addEventListener("touchend", (e) => {
       clearTimeout(longPressTimer);
-      if (touchMode === "drag") {
-        endDrag();
-      }
+      endDrag();
       touchMode = "none";
     });
   })(),
@@ -924,7 +923,8 @@ function loadExample(_0x5b3c3b) {
   }),
   document.getElementById("removeSegment").addEventListener("click", () => {
     const _0x19abad = chart.data.datasets[0x0]?.data;
-    if (!_0x19abad || _0x19abad.length <= 0x1) return;
+    // 至少要保留兩個點（也就是一段），所以 length <= 2 時就不能再刪除
+    if (!_0x19abad || _0x19abad.length <= 2) return;
     (_0x19abad.pop(), chart.update(), updateSegmentSummary());
   }),
   document.getElementById("restartApp").addEventListener("click", () => {

@@ -414,13 +414,15 @@ canvas {
   z-index: 10;
 }
 .btn-zoom {
-  width: 40px;
+  width: auto;
+  min-width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 20px;
+  padding: 0 12px;
   border: 1px solid var(--border-color);
   background: rgba(255, 255, 255, 0.9);
   color: var(--text-color);
-  font-size: 20px;
+  font-size: 14px;
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -488,6 +490,28 @@ canvas {
 .btn-fullscreen:hover {
   background: var(--bg-color);
   transform: scale(1.05);
+}
+
+/* CSS Fullscreen Fallback (100% Reliable across all devices) */
+.fullscreen-mode #part-chart {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: var(--bg-color) !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+}
+.fullscreen-mode #chart-container {
+  flex: 1;
+  height: 100% !important;
+  min-height: unset !important;
 }
 
 /* Responsive Layout Overrides */

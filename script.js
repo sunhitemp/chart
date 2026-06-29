@@ -936,16 +936,16 @@ function loadExample(_0x5b3c3b) {
 const zoomInBtn = document.getElementById("zoomInBtn");
 if (zoomInBtn) {
   zoomInBtn.addEventListener("click", () => {
-    chart.options.scales.x.max *= 0.9;
-    chart.update("none");
+    // 更改為「增加段數」功能
+    document.getElementById("addSegment").click();
   });
 }
 
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 if (zoomOutBtn) {
   zoomOutBtn.addEventListener("click", () => {
-    chart.options.scales.x.max *= 1.1;
-    chart.update("none");
+    // 更改為「減少段數」功能
+    document.getElementById("removeSegment").click();
   });
 }
 
@@ -990,35 +990,21 @@ window.addEventListener("mouseup", (e) => {
   }
 });
 
-// Fullscreen Toggle Logic
+// Fullscreen Toggle Logic (CSS Fallback for 100% Reliability)
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 if (fullscreenBtn) {
   fullscreenBtn.addEventListener("click", () => {
-    const container = document.getElementById("part-chart");
-    if (!document.fullscreenElement) {
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      } else if (container.msRequestFullscreen) {
-        container.msRequestFullscreen();
-      }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
-    }
-  });
+    document.body.classList.toggle("fullscreen-mode");
 
-  document.addEventListener("fullscreenchange", () => {
-    if (document.fullscreenElement) {
+    if (document.body.classList.contains("fullscreen-mode")) {
       fullscreenBtn.textContent = "⛶ 退出全螢幕";
     } else {
       fullscreenBtn.textContent = "⛶ 全螢幕";
     }
+
+    // Resize chart to fill new container
+    setTimeout(() => {
+      if (chart) chart.resize();
+    }, 100);
   });
 }

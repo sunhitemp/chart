@@ -96,12 +96,16 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
       <div class="card chart-card" id="part-chart">
         <div id="chart-container">
           <div class="zoom-controls">
-            <button id="zoomInBtn" class="btn-zoom" title="放大">+</button>
-            <button id="zoomOutBtn" class="btn-zoom" title="縮小">-</button>
+            <button id="zoomInBtn" class="btn-zoom" title="增加段數">
+              + 段數
+            </button>
+            <button id="zoomOutBtn" class="btn-zoom" title="減少段數">
+              - 段數
+            </button>
           </div>
           <div class="snap-control">
             <input type="checkbox" id="autoSnap" checked />
-            <label for="autoSnap">自動吸附格子</label>
+            <label for="autoSnap">吸附</label>
           </div>
           <button id="fullscreenBtn" class="btn-fullscreen" title="全螢幕切換">
             ⛶ 全螢幕

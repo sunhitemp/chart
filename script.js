@@ -176,8 +176,23 @@ function getXY(_0x459a40) {
   return { x: _0x5c2436 - _0x4132f0.left, y: _0x3fe1b6 - _0x4132f0.top };
 }
 
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
 function startDrag(_0x5439d2) {
   draggingPoint = getPointIndex(_0x5439d2);
+  if (draggingPoint !== null) {
+    const { x, y } = getXY(_0x5439d2);
+    const meta = chart.getDatasetMeta(0);
+    const point = meta.data[draggingPoint];
+    if (point) {
+      dragOffsetX = point.x - x;
+      dragOffsetY = point.y - y;
+    } else {
+      dragOffsetX = 0;
+      dragOffsetY = 0;
+    }
+  }
 }
 function endDrag() {
   if (draggingPoint !== null) {
@@ -188,7 +203,12 @@ function endDrag() {
 function doDrag(_0x6dac00) {
   if (draggingPoint === null) return;
   const autoSnap = document.getElementById("autoSnap")?.checked;
-  const { x: _0x56f6ee, y: _0x5109f8 } = getXY(_0x6dac00);
+  const { x: rawTouchX, y: rawTouchY } = getXY(_0x6dac00);
+  
+  // Apply offset so point doesn't jump
+  const _0x56f6ee = rawTouchX + dragOffsetX;
+  const _0x5109f8 = rawTouchY + dragOffsetY;
+  
   const rawX = chart.scales.x.getValueForPixel(_0x56f6ee);
   const rawY = chart.scales.y.getValueForPixel(_0x5109f8);
   const _0x20eeae = autoSnap ? Math.round(rawX / 10) * 10 : Math.floor(rawX),
@@ -229,6 +249,7 @@ let dragRAF = null;
   }),
   canvas.addEventListener("mouseup", endDrag),
   (() => {
+    let longPressTimer = null;
     let initialPinchDistance = null;
     let touchMode = "none"; // "dragPoint", "panChart", "pinch"
     let lastPanX = 0;
@@ -247,6 +268,7 @@ let dragRAF = null;
       if (touches.length === 2) {
         touchMode = "pinch";
         initialPinchDistance = getDistance(touches);
+        clearTimeout(longPressTimer);
       } else if (touches.length === 1) {
         lastPanX = touches[0].clientX;
 
@@ -256,22 +278,16 @@ let dragRAF = null;
         if (draggingPoint !== null) {
           touchMode = "dragPoint";
         } else {
-          // Verify if the touch is in the "middle" safe zone for panning
-          const rect = canvas.getBoundingClientRect();
-          const touchX = touches[0].clientX - rect.left;
-          const touchY = touches[0].clientY - rect.top;
-
-          // Margin of 20% on all sides. Panning only allowed in the center 60%
-          const isSafeX =
-            touchX > rect.width * 0.2 && touchX < rect.width * 0.8;
-          const isSafeY =
-            touchY > rect.height * 0.2 && touchY < rect.height * 0.8;
-
-          if (isSafeX && isSafeY) {
-            touchMode = "panChart";
-          } else {
-            touchMode = "none";
-          }
+          touchMode = "none";
+          // If they didn't hit a point, they might want to pan. Start the 400ms timer.
+          longPressTimer = setTimeout(() => {
+            if (touchMode === "none") {
+              touchMode = "panChart";
+              try {
+                navigator.vibrate(50);
+              } catch (err) {}
+            }
+          }, 400);
         }
       }
     });
@@ -287,6 +303,11 @@ let dragRAF = null;
           chart.update("none");
         }
         initialPinchDistance = currentDistance;
+      } else if (touchMode === "none" && draggingPoint === null) {
+        // If they swipe quickly before 400ms, cancel the long press
+        if (Math.abs(touches[0].clientX - lastPanX) > 10) {
+          clearTimeout(longPressTimer);
+        }
       } else if (touchMode === "dragPoint") {
         if (draggingPoint !== null) {
           e.preventDefault();
@@ -310,6 +331,7 @@ let dragRAF = null;
     });
 
     canvas.addEventListener("touchend", (e) => {
+      clearTimeout(longPressTimer);
       endDrag();
       touchMode = "none";
     });
@@ -998,8 +1020,20 @@ if (fullscreenBtn) {
 
     if (document.body.classList.contains("fullscreen-mode")) {
       fullscreenBtn.textContent = "⛶ 退出全螢幕";
+      // Lock orientation to landscape on mobile
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock("landscape").catch(e => console.log(e));
+        }
+      } catch (err) {}
     } else {
       fullscreenBtn.textContent = "⛶ 全螢幕";
+      // Unlock orientation
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (err) {}
     }
 
     // Resize chart to fill new container

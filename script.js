@@ -800,8 +800,10 @@ function updateFloatingSummary() {
       (_0x56825c.style.zIndex = "1000"),
       (_0x56825c.style.display = "grid"),
       (_0x56825c.style.gridTemplateColumns =
-        "repeat(" + _0x19f466 + ", 120px)"),
-      (_0x56825c.style.gap = "12px"),
+        "repeat(" + _0x19f466 + ", " + (_0x24aeb2 ? "minmax(0, 1fr)" : "120px") + ")"),
+      (_0x56825c.style.width = _0x24aeb2 ? "calc(100vw - 20px)" : "auto"),
+      (_0x56825c.style.padding = _0x24aeb2 ? "12px" : "20px"),
+      (_0x56825c.style.gap = _0x24aeb2 ? "6px" : "12px"),
       (_0x56825c.style.maxHeight = "80vh"),
       (_0x56825c.style.overflowY = "auto"),
       (_0x56825c.style.position = "fixed"),
@@ -913,7 +915,7 @@ function drawSingleLED(block, activeColor) {
 
   // 以 SVG 繪製七段顯示器
   return `
-    <svg viewBox="0 0 100 150" style="width: 20px; height: 35px; flex-shrink: 0; margin: 0 1px;">
+    <svg viewBox="0 0 100 150" style="width: 23%; max-width: 20px; height: auto; flex-shrink: 0;">
         <!-- A (Top) -->
         <polygon points="22,10 78,10 70,22 30,22" fill="${getC(1)}" style="filter:${getF(1)}; transition: fill 0.2s" />
         <!-- B (Top Right) -->
@@ -948,20 +950,22 @@ function createBox(
   container.style.justifyContent = "center";
   container.style.background = "#000";
   container.style.borderRadius = "8px";
-  container.style.padding = "6px 8px";
+  container.style.borderRadius = "8px";
+  container.style.padding = "6px 4px";
   container.style.gap = "6px";
-  container.style.width = "120px";
+  container.style.width = "100%";
+  container.style.maxWidth = "120px";
   container.style.boxSizing = "border-box";
   container.style.boxShadow = "inset 0 0 10px rgba(255,255,255,0.05)";
 
   const topBlocks = parseLEDText(_0x414230);
   const bottomBlocks = parseLEDText(_0x409eab);
 
-  let topHTML = '<div style="display: flex;">';
+  let topHTML = '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
   topBlocks.forEach((b) => (topHTML += drawSingleLED(b, _0x336e42)));
   topHTML += "</div>";
 
-  let bottomHTML = '<div style="display: flex;">';
+  let bottomHTML = '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
   bottomBlocks.forEach((b) => (bottomHTML += drawSingleLED(b, _0x526efd)));
   bottomHTML += "</div>";
 

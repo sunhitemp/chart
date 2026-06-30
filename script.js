@@ -336,7 +336,7 @@ let dragRAF = null;
       touchMode = "none";
     });
   })(),
-  canvas.addEventListener("dblclick", (_0x3da710) => {
+  canvas.addEventListener("dblclick", async (_0x3da710) => {
     const _0x49041f = chart.getElementsAtEventForMode(
       _0x3da710,
       "nearest",
@@ -346,7 +346,7 @@ let dragRAF = null;
     if (_0x49041f) {
       const _0x340a03 = _0x49041f.index,
         _0x4e4d35 = chart.data.datasets[0x0].data[_0x340a03],
-        _0x57a3a4 = prompt("輸入新的溫度：", _0x4e4d35.y);
+        _0x57a3a4 = await customPrompt("輸入新的溫度：", _0x4e4d35.y);
       _0x57a3a4 !== null &&
         !isNaN(_0x57a3a4) &&
         ((chart.data.datasets[0x0].data[_0x340a03].y = parseInt(_0x57a3a4)),
@@ -378,7 +378,7 @@ let dragRAF = null;
               .toString()
               .padStart(0x2, "0"),
             _0xdc25d7 = (_0x5ee0ab % 0x3c).toString().padStart(0x2, "0"),
-            _0x1c46f2 = prompt(
+            _0x1c46f2 = await customPrompt(
               "輸入新的時間差 格式(小時:分鐘、小時分鐘、分鐘 或 END)：",
               _0x24065f + ":" + _0xdc25d7,
             );
@@ -415,7 +415,9 @@ let dragRAF = null;
                   _0x48762d[_0x5c1c11].x + _0x3ed9e2),
                 chart.update(),
                 updateSegmentSummary())
-              : alert("輸入格式錯誤，請使用 HH:MM、HHMM、MM 或 END");
+              : await customAlert(
+                  "輸入格式錯誤，請使用 HH:MM、HHMM、MM 或 END",
+                );
           }
           break;
         }
@@ -657,16 +659,16 @@ function updateSegmentSummary() {
     _0x4ea68b.appendChild(_0x36d6f8);
   }
 }
-function editTemp(_0x5a272c) {
+async function editTemp(_0x5a272c) {
   const _0x4767fa = chart.data.datasets[0x0].data[_0x5a272c],
-    _0x58728d = prompt("輸入新的溫度：", _0x4767fa.y);
+    _0x58728d = await customPrompt("輸入新的溫度：", _0x4767fa.y);
   _0x58728d !== null &&
     !isNaN(_0x58728d) &&
     ((_0x4767fa.y = parseInt(_0x58728d)),
     chart.update(),
     updateSegmentSummary());
 }
-function editTime(_0x4d4461) {
+async function editTime(_0x4d4461) {
   const _0x4b75d9 = chart.data.datasets[0x0].data,
     _0x3f6437 = _0x4b75d9[_0x4d4461].x,
     _0xdcf3a0 = _0x4b75d9[_0x4d4461 + 0x1].x,
@@ -675,7 +677,7 @@ function editTime(_0x4d4461) {
       .toString()
       .padStart(0x2, "0"),
     _0x4898ba = (_0x525dac % 0x3c).toString().padStart(0x2, "0"),
-    _0x246927 = prompt(
+    _0x246927 = await customPrompt(
       "輸入新的時間差 格式(小時:分鐘、小時分鐘、分鐘 或 END)：",
       _0x37b198 + ":" + _0x4898ba,
     );
@@ -708,11 +710,13 @@ function editTime(_0x4d4461) {
         }
       }
     }
-    _0xf7b1fa !== null && !isNaN(_0xf7b1fa)
-      ? ((_0x4b75d9[_0x4d4461 + 0x1].x = _0x4b75d9[_0x4d4461].x + _0xf7b1fa),
-        chart.update(),
-        updateSegmentSummary())
-      : alert("輸入格式錯誤，請使用\x20HH:MM、HHMM、MM\x20或\x20END");
+    if (_0xf7b1fa !== null && !isNaN(_0xf7b1fa)) {
+      _0x4b75d9[_0x4d4461 + 0x1].x = _0x4b75d9[_0x4d4461].x + _0xf7b1fa;
+      chart.update();
+      updateSegmentSummary();
+    } else {
+      await customAlert("輸入格式錯誤，請使用 HH:MM、HHMM、MM 或 END");
+    }
   }
 }
 (Chart.register({
@@ -1141,7 +1145,7 @@ function loadExample(_0x5b3c3b) {
     chart.update(),
     updateSegmentSummary());
 }
-(document.getElementById("test3").addEventListener("click", () => {
+(document.getElementById("test3").addEventListener("click", async () => {
   const _0x3a3b8b = document.getElementById("error-message"),
     _0x1eaf95 = chart.data.datasets[0x0].data;
   if (_0x1eaf95.length < 0x2) {
@@ -1157,11 +1161,13 @@ function loadExample(_0x5b3c3b) {
     updateSegmentSummary();
     _0x3a3b8b.textContent =
       "錯誤!最後一段程式時間必須為END。已為您補上最後一段 END 程式。";
-    alert("已自動補上最後一段 END 程式，請按照流程圖輸入進溫度控制器");
+    await customAlert(
+      "已自動補上最後一段 END 程式，請按照流程圖輸入進溫度控制器",
+    );
     updateFloatingSummary();
   } else {
     _0x3a3b8b.textContent = "";
-    alert("程式正確，請按照右邊的流程圖輸入進溫度控制器");
+    await customAlert("程式正確，請按照右邊的流程圖輸入進溫度控制器");
     updateFloatingSummary();
   }
 }),
@@ -1298,6 +1304,122 @@ if (fullscreenBtn) {
     setTimeout(() => {
       if (chart) chart.resize();
     }, 100);
+  });
+}
+
+// Custom Modal Utilities
+function customPrompt(titleText, defaultValue = "") {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);";
+    
+    const modal = document.createElement("div");
+    modal.style.cssText = "background: #1e293b; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #334155; text-align: left;";
+    
+    const title = document.createElement("h3");
+    title.style.cssText = "margin: 0 0 16px 0; color: #3b82f6; font-size: 1.25rem;";
+    title.textContent = titleText;
+    
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = defaultValue;
+    input.style.cssText = "width: 100%; padding: 12px; margin-bottom: 24px; background: #0f172a; border: 1px solid #334155; color: #ffffff; border-radius: 8px; font-size: 1rem; outline: none; box-sizing: border-box;";
+    input.onfocus = () => input.style.borderColor = "#3b82f6";
+    input.onblur = () => input.style.borderColor = "#334155";
+    
+    const btnContainer = document.createElement("div");
+    btnContainer.style.cssText = "display: flex; justify-content: flex-end; gap: 12px;";
+    
+    const cancelBtn = document.createElement("button");
+    cancelBtn.style.cssText = "background: transparent; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1rem;";
+    cancelBtn.textContent = "取消";
+    
+    const confirmBtn = document.createElement("button");
+    confirmBtn.style.cssText = "background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1rem;";
+    confirmBtn.textContent = "確定";
+    
+    btnContainer.appendChild(cancelBtn);
+    btnContainer.appendChild(confirmBtn);
+    modal.appendChild(title);
+    modal.appendChild(input);
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    input.focus();
+    
+    const cleanup = () => {
+      document.body.removeChild(overlay);
+    };
+    
+    confirmBtn.onclick = () => {
+      resolve(input.value);
+      cleanup();
+    };
+    cancelBtn.onclick = () => {
+      resolve(null);
+      cleanup();
+    };
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        resolve(input.value);
+        cleanup();
+      }
+      if (e.key === "Escape") {
+        resolve(null);
+        cleanup();
+      }
+    };
+  });
+}
+
+function customAlert(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);";
+    
+    const modal = document.createElement("div");
+    modal.style.cssText = "background: #1e293b; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #334155; text-align: left;";
+    
+    const title = document.createElement("h3");
+    title.style.cssText = "margin: 0 0 16px 0; color: #3b82f6; font-size: 1.25rem;";
+    title.textContent = "提示";
+    
+    const msg = document.createElement("div");
+    msg.style.cssText = "margin-bottom: 24px; font-size: 1.1rem; line-height: 1.5; color: #ffffff !important; white-space: pre-wrap; word-break: break-all; display: block;";
+    msg.textContent = message;
+    
+    const btnContainer = document.createElement("div");
+    btnContainer.style.cssText = "display: flex; justify-content: flex-end;";
+    
+    const confirmBtn = document.createElement("button");
+    confirmBtn.style.cssText = "background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1rem;";
+    confirmBtn.textContent = "確定";
+    
+    btnContainer.appendChild(confirmBtn);
+    modal.appendChild(title);
+    modal.appendChild(msg);
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    const cleanup = () => {
+      document.body.removeChild(overlay);
+      window.removeEventListener("keydown", onKey);
+    };
+    
+    const onKey = (e) => {
+      if (e.key === "Enter" || e.key === "Escape") {
+        resolve();
+        cleanup();
+      }
+    };
+    
+    confirmBtn.onclick = () => {
+      resolve();
+      cleanup();
+    };
+    window.addEventListener("keydown", onKey);
   });
 }
 

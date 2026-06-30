@@ -1300,3 +1300,15 @@ if (fullscreenBtn) {
     }, 100);
   });
 }
+
+// Auto-scroll to controls on mobile after load
+window.addEventListener("load", () => {
+  if (window.innerWidth <= 1024) {
+    setTimeout(() => {
+      const controls = document.getElementById("part-controls");
+      if (controls) {
+        controls.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 300); // slight delay to ensure rendering is complete
+  }
+});

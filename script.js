@@ -1353,11 +1353,8 @@ function startWizard() {
   const controlsCard = document.getElementById("part-controls");
 
   function closeWizardOverlay() {
-    if (isMobile && controlsCard && overlay.parentNode === controlsCard) {
-      controlsCard.removeChild(overlay);
-      Array.from(controlsCard.children).forEach(c => c.style.display = '');
-    } else if (overlay.parentNode) {
-      document.body.removeChild(overlay);
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
     }
   }
 
@@ -1366,12 +1363,21 @@ function startWizard() {
   overlay.id = 'wizardOverlay';
   
   if (isMobile && controlsCard) {
+    controlsCard.style.position = 'relative'; // Anchor the absolute child
     Object.assign(overlay.style, {
-      position: 'relative',
+      position: 'absolute',
+      top: '0',
+      left: '0',
       width: '100%',
-      zIndex: '10'
+      zIndex: '1000',
+      background: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(8px)',
+      borderRadius: '12px',
+      boxShadow: '0 15px 35px rgba(0,0,0,0.15)',
+      padding: '15px',
+      display: 'block'
     });
-    Array.from(controlsCard.children).forEach(c => c.style.display = 'none');
+    // Append as absolute layer on top of controls (no need to hide original children)
     controlsCard.appendChild(overlay);
   } else {
     Object.assign(overlay.style, {
@@ -1389,7 +1395,7 @@ function startWizard() {
     background: isMobile ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
     backdropFilter: isMobile ? 'none' : 'blur(10px)',
     borderRadius: '12px',
-    padding: isMobile ? '10px 0' : '20px',
+    padding: isMobile ? '0' : '20px',
     width: '100%',
     maxWidth: isMobile ? 'none' : '350px',
     boxShadow: isMobile ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.3)',

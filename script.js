@@ -1354,6 +1354,7 @@ function startWizard() {
 
   function closeWizardOverlay() {
     if (overlay.parentNode) {
+      if (overlay._resizeHandler) window.removeEventListener('resize', overlay._resizeHandler);
       overlay.parentNode.removeChild(overlay);
     }
   }
@@ -1362,23 +1363,38 @@ function startWizard() {
   const overlay = document.createElement('div');
   overlay.id = 'wizardOverlay';
   
-  if (isMobile && controlsCard) {
-    controlsCard.style.position = 'relative'; // Anchor the absolute child
+  if (controlsCard) {
+    // 100% Foolproof method: Use exact viewport coordinates and append to body
+    const rect = controlsCard.getBoundingClientRect();
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+    const sl = window.pageXOffset || document.documentElement.scrollLeft;
+    
     Object.assign(overlay.style, {
       position: 'absolute',
-      top: '0',
-      left: '0',
-      width: '100%',
-      zIndex: '1000',
+      top: (rect.top + st) + 'px',
+      left: (rect.left + sl) + 'px',
+      width: rect.width + 'px',
+      minHeight: rect.height + 'px',
+      zIndex: '10000',
       background: 'rgba(255, 255, 255, 0.98)',
       backdropFilter: 'blur(8px)',
       borderRadius: '12px',
-      boxShadow: '0 15px 35px rgba(0,0,0,0.15)',
+      boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
       padding: '15px',
       display: 'block'
     });
-    // Append as absolute layer on top of controls (no need to hide original children)
-    controlsCard.appendChild(overlay);
+    document.body.appendChild(overlay);
+    
+    overlay._resizeHandler = () => {
+      const nr = controlsCard.getBoundingClientRect();
+      const nst = window.pageYOffset || document.documentElement.scrollTop;
+      const nsl = window.pageXOffset || document.documentElement.scrollLeft;
+      overlay.style.top = (nr.top + nst) + 'px';
+      overlay.style.left = (nr.left + nsl) + 'px';
+      overlay.style.width = nr.width + 'px';
+      overlay.style.minHeight = nr.height + 'px';
+    };
+    window.addEventListener('resize', overlay._resizeHandler);
   } else {
     Object.assign(overlay.style, {
       position: 'fixed',

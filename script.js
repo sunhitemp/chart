@@ -1349,30 +1349,37 @@ function startWizard() {
     updateSegmentSummary();
   }
 
-  const isMobile = window.innerWidth <= 768;
-  const controlsCard = document.getElementById("part-controls");
+  const isMobile = window.innerWidth <= 1024 || window.innerHeight <= 600;
+  const chartCard = document.getElementById("part-chart");
 
   function closeWizardOverlay() {
-    if (isMobile && controlsCard && overlay.parentNode === controlsCard) {
-      controlsCard.removeChild(overlay);
-      Array.from(controlsCard.children).forEach(c => c.style.display = '');
-    } else if (overlay.parentNode) {
-      document.body.removeChild(overlay);
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
     }
   }
 
-  // Create overlay (floating panel)
+  // Create overlay (floating panel or inline card)
   const overlay = document.createElement('div');
   overlay.id = 'wizardOverlay';
   
-  if (isMobile && controlsCard) {
+  if (isMobile && chartCard) {
+    // Render as a dedicated card directly above the chart
     Object.assign(overlay.style, {
       position: 'relative',
       width: '100%',
-      zIndex: '10'
+      zIndex: '10',
+      background: '#ffffff',
+      borderRadius: '12px',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+      marginBottom: '15px',
+      padding: '0' // modal handles padding
     });
-    Array.from(controlsCard.children).forEach(c => c.style.display = 'none');
-    controlsCard.appendChild(overlay);
+    chartCard.parentNode.insertBefore(overlay, chartCard);
+    
+    // Auto-scroll to wizard
+    setTimeout(() => {
+      overlay.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   } else {
     Object.assign(overlay.style, {
       position: 'fixed',
@@ -1389,7 +1396,7 @@ function startWizard() {
     background: isMobile ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
     backdropFilter: isMobile ? 'none' : 'blur(10px)',
     borderRadius: '12px',
-    padding: isMobile ? '10px 0' : '20px',
+    padding: isMobile ? '15px' : '20px',
     width: '100%',
     maxWidth: isMobile ? 'none' : '350px',
     boxShadow: isMobile ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.3)',

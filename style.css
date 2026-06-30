@@ -50,7 +50,8 @@ body {
   -webkit-touch-callout: none;
   user-select: none;
 }
-input, textarea {
+input,
+textarea {
   -webkit-user-select: auto;
   user-select: auto;
 }
@@ -559,25 +560,44 @@ canvas {
   .header-logo img {
     height: 60px;
   }
-  .examples-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .examples-area {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+  }
+  .examples-area h3 {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 1rem;
+  }
+  .examples-area .btn-group {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+  }
+  .examples-area .btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    flex: 1;
   }
 
-  /* Make controls 6 square buttons */
+  /* Make controls rectangular (half height of square) */
   .btn-group-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
   }
   .btn-group-row .btn {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 2 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 0.2rem;
     white-space: pre-line;
     font-size: 0.85rem;
+    line-height: 1.2;
   }
 }
 

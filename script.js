@@ -463,13 +463,47 @@ function drawDistanceLabels() {
   for (let i = 0; i < dataPoints.length; i++) {
     const pointMeta = meta.data[i];
 
+    // Draw vertical program divider line
+    if (i % 8 === 0) {
+      ctx.save();
+      const pvIdx = Math.floor(i / 8) + 1;
+      const xPos = pointMeta.x;
+      const yTop = chart.chartArea.top;
+      const yBottom = chart.chartArea.bottom;
+
+      ctx.beginPath();
+      ctx.moveTo(xPos, yTop);
+      ctx.lineTo(xPos, yBottom);
+      ctx.lineWidth = 2;
+      // 第一個是紅線 (Red), others cycle through distinct colors
+      const programColors = [
+        "#ff4d4d",
+        "#4cd137",
+        "#4facfe",
+        "#ffb84d",
+        "#9c88ff",
+        "#e84118",
+        "#00a8ff",
+      ];
+      ctx.strokeStyle = programColors[(pvIdx - 1) % programColors.length];
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.font = "bold 14px 'Noto Sans TC', sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText("程式" + pvIdx, xPos + 6, yTop + 6);
+      ctx.restore();
+    }
+
     // Label for PV_SV (Node tags)
     if (i > 0) {
       const diffX = dataPoints[i].x - dataPoints[i - 1].x;
       if (diffX > 0) {
-        const pvIndex = Math.floor((i - 1) / 8) + 1;
         const svIndex = ((i - 1) % 8) + 1;
-        const text = "PV" + pvIndex + "_SV" + svIndex;
+        const text = "第" + svIndex + "段";
         drawBadge(
           text,
           pointMeta.x,
@@ -543,22 +577,43 @@ function updateSegmentSummary() {
       _0x4fb27a = Math.floor((_0x224bf7 - 0x1) / 0x8) + 0x1,
       _0x4a1ae5 = ((_0x224bf7 - 0x1) % 0x8) + 0x1,
       _0x4043a1 = ((_0x224bf7 - 0x1) % 0x8) + 0x1,
-      _0x558751 = "PV" + _0x4fb27a + "_SV" + _0x4a1ae5,
-      _0x43f5f5 =
+      _0x558751 = "第" + _0x4a1ae5 + "段溫度";
+
+    let phaseStr = "";
+    if (_0x169b1e.y > _0xb633ad.y)
+      phaseStr =
+        '<span style="color: #ff4d4d; margin-left: 4px;">(升溫)</span>';
+    else if (_0x169b1e.y < _0xb633ad.y)
+      phaseStr =
+        '<span style="color: #aaaaaa; margin-left: 4px;">(自然降溫)</span>';
+    else
+      phaseStr =
+        '<span style="color: #4facfe; margin-left: 4px;">(持溫)</span>';
+
+    const _0x43f5f5 =
+        (_0x4a1ae5 === 1
+          ? _0x4fb27a === 1
+            ? '<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; margin-bottom: 4px;"><div style="font-weight: bold; color: #4facfe; font-size: 1.1em;">程式1</div><div style="font-size: 0.85em; color: #aaa;">程式設定 (數據面板)</div></div>'
+            : '<div style="font-weight: bold; color: #4facfe; margin-top: 12px; margin-bottom: 4px; font-size: 1.1em;">程式' +
+              _0x4fb27a +
+              "</div>"
+          : "") +
         _0x558751 +
         ': <span class="editable" style="color: red;"onclick="editTemp(' +
         _0x5dca3d +
         ')">' +
         _0x169b1e.y +
-        "</span> °C",
+        "</span> °C" +
+        phaseStr,
       _0x36d6f8 = document.createElement("div");
     if (_0x5dca3d === _0x4a39cf.length - 0x1) {
       const _0x4104bb = _0x169b1e.x - _0xb633ad.x;
       if (_0x4104bb === 0x0)
         _0x36d6f8.innerHTML =
           _0x43f5f5 +
-          "<br>tN" +
+          "<br>第" +
           _0x4043a1 +
+          "段時間" +
           ":\x20<span\x20class=\x22editable\x22\x20style=\x22color:\x20red;\x22onclick=\x22editTime(" +
           (_0x5dca3d - 0x1) +
           ')">END</span>';
@@ -569,8 +624,9 @@ function updateSegmentSummary() {
           _0x1253c0 = (_0x4104bb % 0x3c).toString().padStart(0x2, "0");
         _0x36d6f8.innerHTML =
           _0x43f5f5 +
-          "<br>tN" +
+          "<br>第" +
           _0x4043a1 +
+          "段時間" +
           ': <span class="editable" style="color: red;"onclick="editTime(' +
           (_0x5dca3d - 0x1) +
           ')">' +
@@ -587,8 +643,9 @@ function updateSegmentSummary() {
         _0x50e87f = (_0x5123a8 % 0x3c).toString().padStart(0x2, "0");
       _0x36d6f8.innerHTML =
         _0x43f5f5 +
-        "<br>tN" +
+        "<br>第" +
         _0x4043a1 +
+        "段時間" +
         ': <span class="editable" style="color: red;"onclick="editTime(' +
         (_0x5dca3d - 0x1) +
         ')">' +
@@ -785,7 +842,15 @@ const exampleData = {
 function updateFloatingSummary() {
   const _0x184a89 = chart.data.datasets[0x0].data;
   let _0x24aeb2 = window.innerWidth <= 0x300;
-  const _0x19f466 = _0x24aeb2 ? 0x3 : 0x6;
+
+  let totalItems = 0;
+  for (let i = 1; i < _0x184a89.length; i++) {
+    if (((i - 1) % 8) + 1 === 1) totalItems++;
+    totalItems += 3;
+  }
+  let desktopCols = Math.ceil(Math.sqrt(totalItems * 1.33));
+  if (desktopCols < 4) desktopCols = 4;
+
   let _0x56825c = document.getElementById("floatingSummary");
   !_0x56825c
     ? ((_0x56825c = document.createElement("div")),
@@ -799,26 +864,31 @@ function updateFloatingSummary() {
       (_0x56825c.style.borderRadius = "12px"),
       (_0x56825c.style.zIndex = "1000"),
       (_0x56825c.style.display = "grid"),
-      (_0x56825c.style.gridTemplateColumns =
-        "repeat(" + _0x19f466 + ", " + (_0x24aeb2 ? "minmax(0, 1fr)" : "120px") + ")"),
-      (_0x56825c.style.width = _0x24aeb2 ? "calc(100vw - 20px)" : "auto"),
+      (_0x56825c.style.gridTemplateColumns = _0x24aeb2
+        ? "repeat(3, minmax(0, 1fr))"
+        : "repeat(" + desktopCols + ", 120px)"),
+      (_0x56825c.style.justifyContent = "center"),
+      (_0x56825c.style.width = _0x24aeb2
+        ? "calc(100vw - 20px)"
+        : "fit-content"),
+      (_0x56825c.style.maxWidth = _0x24aeb2 ? "none" : "90vw"),
       (_0x56825c.style.padding = _0x24aeb2 ? "12px" : "20px"),
       (_0x56825c.style.gap = _0x24aeb2 ? "6px" : "12px"),
       (_0x56825c.style.maxHeight = "80vh"),
       (_0x56825c.style.overflowY = "auto"),
       (_0x56825c.style.position = "fixed"),
       (_0x56825c.innerHTML =
-        '\n      <div style="grid-column: span ' +
-        _0x19f466 +
-        '; text-align: right;">\n        <span id="closeFloatingSummary" style="cursor: pointer; font-size: 18px; font-weight: bold">✕</span>\n      </div>'),
+        '\n      <div style="grid-column: 1 / -1; text-align: right;">\n        <span id="closeFloatingSummary" style="cursor: pointer; font-size: 18px; font-weight: bold">✕</span>\n      </div>'),
       document.body.appendChild(_0x56825c),
       _0x56825c
         .querySelector("#closeFloatingSummary")
         .addEventListener("click", () => {
+          if (_0x56825c.observer) _0x56825c.observer.disconnect();
           _0x56825c.remove();
         }))
     : Array.from(_0x56825c.children).forEach((_0x51e449) => {
         !_0x51e449.querySelector("#closeFloatingSummary") &&
+          _0x51e449.className !== "flow-arrows-svg" &&
           _0x56825c.removeChild(_0x51e449);
       });
   for (let _0x102db5 = 0x1; _0x102db5 < _0x184a89.length; _0x102db5++) {
@@ -863,13 +933,40 @@ function updateFloatingSummary() {
       _0x56825c.appendChild(_0x3d4eff),
       _0x56825c.appendChild(_0x2bdc4c));
   }
+
+  if (!_0x56825c.observer) {
+    _0x56825c.observer = new ResizeObserver(() => drawFlowArrows(_0x56825c));
+    _0x56825c.observer.observe(_0x56825c);
+  }
+  requestAnimationFrame(() => drawFlowArrows(_0x56825c));
 }
 const ledDict = {
-    "0": 63, "1": 6, "2": 91, "3": 79, "4": 102, 
-    "5": 109, "6": 125, "7": 7, "8": 127, "9": 111,
-    "P": 115, "t": 120, "T": 120, "N": 55, "n": 55, "M": 43, "S": 109, 
-    "V": 42, "U": 62, "O": 63, "o": 63, "E": 121, 
-    "d": 94, "_": 8, "-": 64, " ": 0
+  0: 63,
+  1: 6,
+  2: 91,
+  3: 79,
+  4: 102,
+  5: 109,
+  6: 125,
+  7: 7,
+  8: 127,
+  9: 111,
+  P: 115,
+  t: 120,
+  T: 120,
+  N: 55,
+  n: 55,
+  M: 43,
+  S: 109,
+  V: 42,
+  U: 62,
+  O: 63,
+  o: 63,
+  E: 121,
+  d: 94,
+  _: 8,
+  "-": 64,
+  " ": 0,
 };
 
 function parseLEDText(str) {
@@ -944,6 +1041,7 @@ function createBox(
   _0x45b20b = "#333",
 ) {
   const container = document.createElement("div");
+  container.className = "led-box";
   container.style.display = "flex";
   container.style.flexDirection = "column";
   container.style.alignItems = "center";
@@ -961,21 +1059,82 @@ function createBox(
   const topBlocks = parseLEDText(_0x414230);
   const bottomBlocks = parseLEDText(_0x409eab);
 
-  let topHTML = '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
+  let topHTML =
+    '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
   topBlocks.forEach((b) => (topHTML += drawSingleLED(b, _0x336e42)));
   topHTML += "</div>";
 
-  let bottomHTML = '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
+  let bottomHTML =
+    '<div style="display: flex; gap: 2%; justify-content: center; width: 100%;">';
   bottomBlocks.forEach((b) => (bottomHTML += drawSingleLED(b, _0x526efd)));
   bottomHTML += "</div>";
 
   container.innerHTML = topHTML + bottomHTML;
   return container;
 }
+
+function drawFlowArrows(container) {
+  let svg = container.querySelector(".flow-arrows-svg");
+  if (!svg) {
+    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "flow-arrows-svg");
+    svg.style.position = "absolute";
+    svg.style.top = "0";
+    svg.style.left = "0";
+    svg.style.pointerEvents = "none";
+    svg.style.zIndex = "10";
+
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.innerHTML =
+      '<marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="#fff" /></marker>';
+    svg.appendChild(defs);
+    container.appendChild(svg);
+  }
+
+  svg.style.width = container.scrollWidth + "px";
+  svg.style.height = container.scrollHeight + "px";
+
+  Array.from(svg.querySelectorAll("path")).forEach((p) => p.remove());
+
+  const boxes = Array.from(container.querySelectorAll(".led-box"));
+  if (boxes.length < 2) return;
+
+  for (let i = 0; i < boxes.length - 1; i++) {
+    const boxA = boxes[i];
+    const boxB = boxes[i + 1];
+
+    const x1 = boxA.offsetLeft + boxA.offsetWidth + 2;
+    const y1 = boxA.offsetTop + boxA.offsetHeight / 2;
+    const x2 = boxB.offsetLeft - 2;
+    const y2 = boxB.offsetTop + boxB.offsetHeight / 2;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("stroke", "#ffffff");
+    path.setAttribute("stroke-opacity", "0.7");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute("marker-end", "url(#arrowhead)");
+
+    if (Math.abs(boxA.offsetTop - boxB.offsetTop) < 10) {
+      // 同列
+      path.setAttribute("d", `M ${x1},${y1} L ${x2},${y2}`);
+    } else {
+      // 換行折返
+      const midY = (boxA.offsetTop + boxA.offsetHeight + boxB.offsetTop) / 2;
+      path.setAttribute(
+        "d",
+        `M ${x1},${y1} L ${x1 + 6},${y1} L ${x1 + 6},${midY} L ${x2 - 6},${midY} L ${x2 - 6},${y2} L ${x2},${y2}`,
+      );
+    }
+    svg.appendChild(path);
+  }
+}
 function loadExample(_0x5b3c3b) {
   const _0x5d08ca = exampleData[_0x5b3c3b];
   if (!_0x5d08ca) return;
-  chart.data.datasets[0x0].data = _0x5d08ca;
+  // Deep copy the example data so dragging points doesn't mutate the template
+  chart.data.datasets[0x0].data = JSON.parse(JSON.stringify(_0x5d08ca));
   const _0x55745e = Math.max(..._0x5d08ca.map((_0x14c96c) => _0x14c96c.x));
   (_0x55745e > chart.options.scales.x.max &&
     (chart.options.scales.x.max = _0x55745e + timeExtendRate),
@@ -1016,9 +1175,8 @@ function loadExample(_0x5b3c3b) {
       _0x3c548d = _0x1e7652.x + _0x5b6a69,
       _0x383eec = _0x1e7652.y,
       _0x53a2fc = _0x53484d.length,
-      _0x138ac3 = Math.floor(_0x53a2fc / 0x8) + 0x1,
       _0x4e9905 = (_0x53a2fc % 0x8) + 0x1,
-      _0x3eaf9e = "PV" + _0x138ac3 + "_SV" + _0x4e9905;
+      _0x3eaf9e = "第" + _0x4e9905 + "段";
     (_0x53484d.push({ x: _0x3c548d, y: _0x383eec, label: _0x3eaf9e }),
       chart.update(),
       updateSegmentSummary());

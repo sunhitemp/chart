@@ -374,8 +374,6 @@ canvas {
   font-size: 0.95rem;
   line-height: 1.6;
   white-space: pre-line;
-  max-height: 300px;
-  overflow-y: auto;
   padding-right: 0.5rem;
 }
 

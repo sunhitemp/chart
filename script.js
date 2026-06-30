@@ -1350,36 +1350,29 @@ function startWizard() {
   }
 
   const isMobile = window.innerWidth <= 1024 || window.innerHeight <= 600;
-  const chartCard = document.getElementById("part-chart");
+  const controlsCard = document.getElementById("part-controls");
 
   function closeWizardOverlay() {
-    if (overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
+    if (isMobile && controlsCard && overlay.parentNode === controlsCard) {
+      controlsCard.removeChild(overlay);
+      Array.from(controlsCard.children).forEach(c => c.style.display = '');
+    } else if (overlay.parentNode) {
+      document.body.removeChild(overlay);
     }
   }
 
-  // Create overlay (floating panel or inline card)
+  // Create overlay (floating panel)
   const overlay = document.createElement('div');
   overlay.id = 'wizardOverlay';
   
-  if (isMobile && chartCard) {
-    // Render as a dedicated card directly above the chart
+  if (isMobile && controlsCard) {
     Object.assign(overlay.style, {
       position: 'relative',
       width: '100%',
-      zIndex: '10',
-      background: '#ffffff',
-      borderRadius: '12px',
-      boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-      marginBottom: '15px',
-      padding: '0' // modal handles padding
+      zIndex: '10'
     });
-    chartCard.parentNode.insertBefore(overlay, chartCard);
-    
-    // Auto-scroll to wizard
-    setTimeout(() => {
-      overlay.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    Array.from(controlsCard.children).forEach(c => c.style.display = 'none');
+    controlsCard.appendChild(overlay);
   } else {
     Object.assign(overlay.style, {
       position: 'fixed',
@@ -1396,7 +1389,7 @@ function startWizard() {
     background: isMobile ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
     backdropFilter: isMobile ? 'none' : 'blur(10px)',
     borderRadius: '12px',
-    padding: isMobile ? '15px' : '20px',
+    padding: isMobile ? '10px 0' : '20px',
     width: '100%',
     maxWidth: isMobile ? 'none' : '350px',
     boxShadow: isMobile ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.3)',

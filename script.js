@@ -1349,27 +1349,51 @@ function startWizard() {
     updateSegmentSummary();
   }
 
+  const isMobile = window.innerWidth <= 768;
+  const controlsCard = document.getElementById("part-controls");
+
+  function closeWizardOverlay() {
+    if (isMobile && controlsCard && overlay.parentNode === controlsCard) {
+      controlsCard.removeChild(overlay);
+      Array.from(controlsCard.children).forEach(c => c.style.display = '');
+    } else if (overlay.parentNode) {
+      document.body.removeChild(overlay);
+    }
+  }
+
   // Create overlay (floating panel)
   const overlay = document.createElement('div');
   overlay.id = 'wizardOverlay';
-  Object.assign(overlay.style, {
-    position: 'fixed',
-    bottom: '20px', right: '20px',
-    zIndex: '10000',
-    display: 'flex',
-    padding: '0'
-  });
+  
+  if (isMobile && controlsCard) {
+    Object.assign(overlay.style, {
+      position: 'relative',
+      width: '100%',
+      zIndex: '10'
+    });
+    Array.from(controlsCard.children).forEach(c => c.style.display = 'none');
+    controlsCard.appendChild(overlay);
+  } else {
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      bottom: '20px', right: '20px',
+      zIndex: '10000',
+      display: 'flex',
+      padding: '0'
+    });
+    document.body.appendChild(overlay);
+  }
 
   const modal = document.createElement('div');
   Object.assign(modal.style, {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(10px)',
+    background: isMobile ? 'transparent' : 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: isMobile ? 'none' : 'blur(10px)',
     borderRadius: '12px',
-    padding: '20px',
+    padding: isMobile ? '10px 0' : '20px',
     width: '100%',
-    maxWidth: '350px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
-    border: '1px solid #e5e7eb',
+    maxWidth: isMobile ? 'none' : '350px',
+    boxShadow: isMobile ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+    border: isMobile ? 'none' : '1px solid #e5e7eb',
     fontFamily: "'Noto Sans TC', sans-serif"
   });
 
@@ -1394,7 +1418,7 @@ function startWizard() {
     closeBtn.innerText = '✕';
     Object.assign(closeBtn.style, { background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#9ca3af' });
     closeBtn.onclick = () => {
-      document.body.removeChild(overlay);
+      closeWizardOverlay();
       chart.data.datasets[0].data = originalPoints;
       chart.options.scales.x.max = originalXMax;
       chart.update();
@@ -1420,7 +1444,7 @@ function startWizard() {
 
     const btnGrid = document.createElement('div');
     btnGrid.style.display = 'grid';
-    btnGrid.style.gridTemplateColumns = '1fr 1fr';
+    btnGrid.style.gridTemplateColumns = isMobile ? 'repeat(4, 1fr)' : '1fr 1fr';
     btnGrid.style.gap = '8px';
     btnGrid.style.marginBottom = '20px';
 
@@ -1565,7 +1589,7 @@ function startWizard() {
     Object.assign(btnBack.style, { padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#f3f4f6', color: '#374151', cursor: 'pointer' });
     btnBack.onclick = () => {
       if (currentStep === 1) {
-        document.body.removeChild(overlay);
+        closeWizardOverlay();
         // restore original chart
         chart.data.datasets[0].data = originalPoints;
         chart.options.scales.x.max = originalXMax;
@@ -1616,7 +1640,7 @@ function startWizard() {
       updateLiveChart();
 
       if (selectedAction === 'end') {
-        document.body.removeChild(overlay);
+        closeWizardOverlay();
         const wantsTutorial = await customConfirm("設定完成！\n\n請問需要給您完整的控制器流程教學嗎？\n您可以按照上面教學在實體控制器上進行設定。", "前往", "不用了");
         if (wantsTutorial) {
           updateFloatingSummary();

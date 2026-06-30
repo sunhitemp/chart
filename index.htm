@@ -70,16 +70,17 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
           </div>
         </div>
         <div class="btn-group-row">
-          <button id="example4" class="btn btn-outline">開始</button>
+          <!-- 自動設定 取代 原本的開始位置 -->
+          <button id="test3" class="btn btn-warning">開始</button>
           <button id="addSegment" class="btn btn-danger">
             增加段數<br />(+)
           </button>
           <button id="removeSegment" class="btn btn-success">
             減少段數<br />(-)
           </button>
-          <button id="test3" class="btn btn-warning">自動設定</button>
           <button id="outdate" class="btn btn-info">設定方法</button>
-          <button id="restartApp" class="btn btn-dark">重新載入</button>
+          <!-- 開始 取代 原本的重新載入位置 (右下角) -->
+          <button id="example4" class="btn btn-outline" style="grid-column: 3;">重新載入</button>
         </div>
         <!-- 隱藏但保留 JS 邏輯所需 -->
         <input
@@ -118,6 +119,6 @@ setInterval(function () { devtoolsOpen = false; console.log(element); }, 1000);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js?v=6"></script>
+    <script src="script.js?v=13"></script>
   </body>
 </html>

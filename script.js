@@ -916,7 +916,7 @@ const exampleData = {
   ],
   example4: [
     { x: 0x0, y: 0x1e },
-    { x: 0x3c, y: 0x1e },
+    { x: 0x3c, y: 0x1f4 },
   ],
 };
 (document.getElementById("example1").addEventListener("click", () => {
@@ -1319,35 +1319,22 @@ function loadExample(_0x5b3c3b) {
 document.getElementById("test3").addEventListener("click", startWizard);
 
 function startWizard() {
-  let currentStep = 1;
-  let wizardData = []; // Array of answers
-  let currentTemp = chart.data.datasets[0].data[0].y; // Starts from Ambient temp
+  if (document.getElementById('wizardOverlay')) {
+    // If it's already open, do nothing (or close it, user said either is fine)
+    // Let's just return to prevent duplicates.
+    return;
+  }
+
+  let wizardData = []; // Optional cache for form state
   
   // Backup original data in case user cancels
   const originalPoints = JSON.parse(JSON.stringify(chart.data.datasets[0].data));
   const originalXMax = chart.options.scales.x.max;
 
-  // Re-draw chart up to the current step immediately
-  function updateLiveChart() {
-    const newPoints = [{ x: 0, y: chart.data.datasets[0].data[0].y }];
-    let totalTime = 0;
-    
-    for (let i = 0; i < wizardData.length; i++) {
-      const w = wizardData[i];
-      if (w.action === 'end') {
-        newPoints.push({ x: totalTime, y: newPoints[newPoints.length - 1].y });
-        break;
-      } else {
-        const segmentTime = (w.durationHours || 0) * 60 + (w.durationMins || 0);
-        totalTime += segmentTime;
-        newPoints.push({ x: totalTime, y: w.targetTemp });
-      }
-    }
-    chart.data.datasets[0].data = newPoints;
-    chart.options.scales.x.max = Math.max(totalTime + 60, 120);
-    chart.update();
-    updateSegmentSummary();
-  }
+  // Clear existing chart data to start fresh from point 0
+  chart.data.datasets[0].data = [{ x: 0, y: chart.data.datasets[0].data[0].y, label: 'PV1' }];
+  chart.update();
+  updateSegmentSummary();
 
   const isMobile = window.innerWidth <= 1024 || window.innerHeight <= 600;
   const controlsCard = document.getElementById("part-controls");
@@ -1363,7 +1350,7 @@ function startWizard() {
   const overlay = document.createElement('div');
   overlay.id = 'wizardOverlay';
   
-  if (controlsCard) {
+  if (isMobile && controlsCard) {
     // 100% Foolproof method: Use exact viewport coordinates and append to body
     const rect = controlsCard.getBoundingClientRect();
     const st = window.pageYOffset || document.documentElement.scrollTop;
@@ -1419,9 +1406,15 @@ function startWizard() {
     fontFamily: "'Noto Sans TC', sans-serif"
   });
 
+  window.wizardSyncFn = () => renderStep();
+
   function renderStep() {
     modal.innerHTML = "";
     
+    const dataPoints = chart.data.datasets[0].data;
+    const currentStep = dataPoints.length; 
+    const currentTemp = dataPoints[currentStep - 1].y;
+
     // Header & Context
     const headerRow = document.createElement('div');
     headerRow.style.display = 'flex';
@@ -1441,10 +1434,12 @@ function startWizard() {
     Object.assign(closeBtn.style, { background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#9ca3af' });
     closeBtn.onclick = () => {
       closeWizardOverlay();
-      chart.data.datasets[0].data = originalPoints;
-      chart.options.scales.x.max = originalXMax;
-      chart.update();
-      updateSegmentSummary();
+      if (chart.data.datasets[0].data.length <= 1) {
+        chart.data.datasets[0].data = JSON.parse(JSON.stringify(originalPoints));
+        chart.options.scales.x.max = originalXMax;
+        chart.update();
+        updateSegmentSummary();
+      }
     };
     headerRow.appendChild(closeBtn);
     modal.appendChild(headerRow);
@@ -1610,18 +1605,13 @@ function startWizard() {
     btnBack.innerText = currentStep === 1 ? '取消' : '上一步';
     Object.assign(btnBack.style, { padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#f3f4f6', color: '#374151', cursor: 'pointer' });
     btnBack.onclick = () => {
-      if (currentStep === 1) {
-        closeWizardOverlay();
-        // restore original chart
-        chart.data.datasets[0].data = originalPoints;
-        chart.options.scales.x.max = originalXMax;
+      if (chart.data.datasets[0].data.length <= 1) {
+        closeBtn.click();
+      } else {
+        wizardData.pop(); // Remove current step to re-evaluate
+        chart.data.datasets[0].data.pop();
         chart.update();
         updateSegmentSummary();
-      } else {
-        currentStep--;
-        wizardData.pop(); // Remove current step to re-evaluate
-        currentTemp = currentStep === 1 ? chart.data.datasets[0].data[0].y : wizardData[currentStep - 2].targetTemp;
-        updateLiveChart();
         renderStep();
       }
     };
@@ -1630,6 +1620,10 @@ function startWizard() {
     btnNext.innerText = selectedAction === 'end' ? '完成' : '下一步';
     Object.assign(btnNext.style, { padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 'bold' });
     
+    // Expose for external physical buttons to act as remote controls
+    window.wizardNextFn = () => btnNext.click();
+    window.wizardBackFn = () => btnBack.click();
+
     btnNext.onclick = async () => {
       if (!selectedAction) return customAlert("請先選擇一個動作");
 
@@ -1658,8 +1652,25 @@ function startWizard() {
         }
       }
 
-      wizardData[currentStep - 1] = { action: selectedAction, targetTemp: tTemp, durationHours: dHr, durationMins: dMin };
-      updateLiveChart();
+      wizardData[chart.data.datasets[0].data.length - 1] = { action: selectedAction, targetTemp: tTemp, durationHours: dHr, durationMins: dMin };
+
+      // Calculate new point
+      const lastPoint = chart.data.datasets[0].data[chart.data.datasets[0].data.length - 1];
+      const totalMins = dHr * 60 + dMin;
+      let newX = lastPoint.x + totalMins;
+      let newY = tTemp;
+      
+      if (selectedAction === 'end') {
+        newX = lastPoint.x;
+        newY = lastPoint.y;
+      }
+
+      chart.data.datasets[0].data.push({ x: newX, y: newY, label: `第${chart.data.datasets[0].data.length}段` });
+      if (newX > chart.options.scales.x.max) {
+        chart.options.scales.x.max = newX + timeExtendRate;
+      }
+      chart.update();
+      updateSegmentSummary();
 
       if (selectedAction === 'end') {
         closeWizardOverlay();
@@ -1668,8 +1679,6 @@ function startWizard() {
           updateFloatingSummary();
         }
       } else {
-        currentTemp = tTemp;
-        currentStep++;
         renderStep();
       }
     };
@@ -1679,9 +1688,6 @@ function startWizard() {
     modal.appendChild(footer);
   }
 
-  // Clear existing chart data to start fresh from point 0
-  updateLiveChart();
-
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
   renderStep();
@@ -1689,6 +1695,7 @@ function startWizard() {
 
 updateSegmentSummary();
 document.getElementById("addSegment").addEventListener("click", () => {
+  // If wizard is active, we just let it add the segment normally and then sync!
   const _0x53484d = chart.data.datasets[0x0]?.data;
   if (!_0x53484d || _0x53484d.length < 0x2) return;
   const _0x1e7652 = _0x53484d[_0x53484d.length - 0x1],
@@ -1706,17 +1713,22 @@ document.getElementById("addSegment").addEventListener("click", () => {
   }
   chart.update();
   updateSegmentSummary();
+  if (document.getElementById("wizardOverlay") && window.wizardSyncFn) {
+    window.wizardSyncFn();
+  }
 });
   document.getElementById("removeSegment").addEventListener("click", () => {
+    // If wizard is active, we just let it remove the segment normally and then sync!
     const _0x19abad = chart.data.datasets[0x0]?.data;
     // 至少要保留兩個點（也就是一段），所以 length <= 2 時就不能再刪除
     if (!_0x19abad || _0x19abad.length <= 2) return;
-    (_0x19abad.pop(), chart.update(), updateSegmentSummary());
+    _0x19abad.pop();
+    chart.update();
+    updateSegmentSummary();
+    if (document.getElementById("wizardOverlay") && window.wizardSyncFn) {
+      window.wizardSyncFn();
+    }
   });
-  document.getElementById("restartApp").addEventListener("click", () => {
-    location.reload();
-  });
-
 // --- Native Chart.js Zoom & Pan Logic ---
 
 const zoomInBtn = document.getElementById("zoomInBtn");

@@ -157,13 +157,33 @@ const totalHours = 0x8,
 let draggingPoint = null;
 const canvas = chart.canvas;
 function getPointIndex(_0x28c735) {
+  const { x, y } = getXY(_0x28c735);
+
+  if (window.nodeBadges) {
+    for (const badge of window.nodeBadges) {
+      if (
+        x >= badge.left &&
+        x <= badge.right &&
+        y >= badge.top &&
+        y <= badge.bottom
+      ) {
+        return badge.index;
+      }
+    }
+  }
+
   const _0x3257ce = chart.getElementsAtEventForMode(
     _0x28c735,
     "nearest",
-    { intersect: false, radius: 15 },
+    { intersect: false },
     false,
   )[0x0];
-  return _0x3257ce ? _0x3257ce.index : null;
+  if (!_0x3257ce) return null;
+  const element = _0x3257ce.element;
+  const distance = Math.sqrt(
+    Math.pow(element.x - x, 2) + Math.pow(element.y - y, 2)
+  );
+  return distance <= 20 ? _0x3257ce.index : null;
 }
 function getXY(_0x459a40) {
   const _0x4132f0 = canvas.getBoundingClientRect(),
@@ -211,48 +231,78 @@ function doDrag(_0x6dac00) {
 
   const rawX = chart.scales.x.getValueForPixel(_0x56f6ee);
   const rawY = chart.scales.y.getValueForPixel(_0x5109f8);
-  const _0x20eeae = autoSnap ? Math.round(rawX / 10) * 10 : Math.floor(rawX),
-    _0x27a678 = autoSnap ? Math.round(rawY / 10) * 10 : Math.round(rawY),
-    _0x207531 =
-      draggingPoint === 0x0
-        ? 0x0
-        : chart.data.datasets[0x0].data[draggingPoint - 0x1].x + 0x1,
-    _0x13366b =
-      draggingPoint === chart.data.datasets[0x0].data.length - 0x1
-        ? 0x270f
-        : chart.data.datasets[0x0].data[draggingPoint + 0x1].x - 0x1,
-    _0x2d707e =
-      draggingPoint === 0x0
-        ? 0x0
-        : Math.min(Math.max(_0x20eeae, _0x207531), _0x13366b),
-    _0x361784 =
-      draggingPoint === 0x0
-        ? 0x0
-        : Math.min(Math.max(_0x27a678, 0x1e), maxTemp);
-  ((chart.data.datasets[0x0].data[draggingPoint] = {
+  const _0x20eeae = autoSnap ? Math.round(rawX / 10) * 10 : Math.floor(rawX);
+  const _0x27a678 = autoSnap ? Math.round(rawY / 10) * 10 : Math.round(rawY);
+
+  const dataPoints = chart.data.datasets[0x0].data;
+  const p = draggingPoint;
+
+  let leftBound = 0;
+  if (p > 0) {
+    if (p >= 2 && dataPoints[p - 1].x === dataPoints[p - 2].x) {
+      leftBound = dataPoints[p - 1].x + 1; // Cannot share X with p-1 if p-1 already shares with p-2
+    } else {
+      leftBound = dataPoints[p - 1].x; // Allow sharing X with p-1
+    }
+  }
+
+  let rightBound = 0x270f;
+  if (p < dataPoints.length - 1) {
+    if (
+      p <= dataPoints.length - 3 &&
+      dataPoints[p + 1].x === dataPoints[p + 2].x
+    ) {
+      rightBound = dataPoints[p + 1].x - 1; // Cannot share X with p+1 if p+1 already shares with p+2
+    } else {
+      rightBound = dataPoints[p + 1].x; // Allow sharing X with p+1
+    }
+  }
+
+  const _0x2d707e =
+    p === 0 ? 0 : Math.min(Math.max(_0x20eeae, leftBound), rightBound);
+  const _0x361784 =
+    p === 0 ? 0 : Math.min(Math.max(_0x27a678, 0x1e), maxTemp);
+
+  dataPoints[p] = {
     x: _0x2d707e,
     y: _0x361784,
-  }),
-    _0x2d707e > chart.options.scales.x.max - 0x1e &&
-      (chart.options.scales.x.max += timeExtendRate),
-    chart.update("none"),
-    updateSegmentSummary());
+  };
+
+  if (p > 0 && _0x2d707e === dataPoints[p - 1].x) {
+    dataPoints[p - 1].y = _0x361784;
+  } else if (
+    p < dataPoints.length - 1 &&
+    _0x2d707e === dataPoints[p + 1].x
+  ) {
+    dataPoints[p + 1].y = _0x361784;
+  }
+
+  if (_0x2d707e > chart.options.scales.x.max - 0x1e) {
+    chart.options.scales.x.max += timeExtendRate;
+  }
+
+  chart.update("none");
+  updateSegmentSummary();
 }
 let dragRAF = null;
-(canvas.addEventListener("mousedown", (_0x4d60bf) => {
-  (_0x4d60bf.preventDefault(), startDrag(_0x4d60bf));
-}),
-  canvas.addEventListener("mousemove", (_0x4bb382) => {
-    _0x4bb382.preventDefault();
-    if (dragRAF) cancelAnimationFrame(dragRAF);
-    dragRAF = requestAnimationFrame(() => doDrag(_0x4bb382));
-  }),
-  canvas.addEventListener("mouseup", endDrag),
-  (() => {
-    let longPressTimer = null;
-    let initialPinchDistance = null;
-    let touchMode = "none"; // "dragPoint", "panChart", "pinch"
+canvas.addEventListener("mousedown", (_0x4d60bf) => {
+  _0x4d60bf.preventDefault();
+  startDrag(_0x4d60bf);
+});
+canvas.addEventListener("mousemove", (_0x4bb382) => {
+  _0x4bb382.preventDefault();
+  if (dragRAF) cancelAnimationFrame(dragRAF);
+  dragRAF = requestAnimationFrame(() => doDrag(_0x4bb382));
+});
+canvas.addEventListener("mouseup", endDrag);
+
+(() => {
+  let longPressTimer = null;
+  let initialPinchDistance = null;
+  let touchMode = "none"; // "dragPoint", "panChart", "pinch"
     let lastPanX = 0;
+    
+    let lastTapTime = 0;
 
     function getDistance(touches) {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -288,6 +338,19 @@ let dragRAF = null;
               } catch (err) {}
             }
           }, 400);
+        }
+
+        // Handle double tap
+        const now = Date.now();
+        if (now - lastTapTime < 500) {
+          // It's a double tap (increased to 500ms for better sensitivity)
+          if (window.handleChartDblClick) {
+            e.preventDefault(); // Stop normal click from firing
+            window.handleChartDblClick(e);
+          }
+          lastTapTime = 0; // reset
+        } else {
+          lastTapTime = now;
         }
       }
     });
@@ -335,95 +398,84 @@ let dragRAF = null;
       endDrag();
       touchMode = "none";
     });
-  })(),
-  canvas.addEventListener("dblclick", async (_0x3da710) => {
-    const _0x49041f = chart.getElementsAtEventForMode(
-      _0x3da710,
-      "nearest",
-      { intersect: !![] },
-      ![],
-    )[0x0];
-    if (_0x49041f) {
-      const _0x340a03 = _0x49041f.index,
-        _0x4e4d35 = chart.data.datasets[0x0].data[_0x340a03],
-        _0x57a3a4 = await customPrompt("輸入新的溫度：", _0x4e4d35.y);
-      _0x57a3a4 !== null &&
-        !isNaN(_0x57a3a4) &&
-        ((chart.data.datasets[0x0].data[_0x340a03].y = parseInt(_0x57a3a4)),
-        chart.update(),
-        updateSegmentSummary());
-    } else {
-      const _0x231d85 = canvas.getBoundingClientRect(),
-        _0x41bd2b = _0x3da710.clientX - _0x231d85.left,
-        _0x122e69 = _0x3da710.clientY - _0x231d85.top,
-        _0x4a94cb = chart.getDatasetMeta(0x0);
-      for (
-        let _0x5c1c11 = 0x0;
-        _0x5c1c11 < _0x4a94cb.data.length - 0x1;
-        _0x5c1c11++
-      ) {
-        const _0x592061 = _0x4a94cb.data[_0x5c1c11],
-          _0x1a6f41 = _0x4a94cb.data[_0x5c1c11 + 0x1],
-          _0x406be4 = (_0x592061.x + _0x1a6f41.x) / 0x2,
-          _0x56ee42 = (_0x592061.y + _0x1a6f41.y) / 0x2;
-        if (
-          Math.abs(_0x41bd2b - _0x406be4) < 0x14 &&
-          Math.abs(_0x122e69 - _0x56ee42) < 0x14
-        ) {
-          const _0x48762d = chart.data.datasets[0x0].data,
-            _0x4bb72f = _0x48762d[_0x5c1c11].x,
-            _0x1d5493 = _0x48762d[_0x5c1c11 + 0x1].x,
-            _0x5ee0ab = _0x1d5493 - _0x4bb72f,
-            _0x24065f = Math.floor(_0x5ee0ab / 0x3c)
-              .toString()
-              .padStart(0x2, "0"),
-            _0xdc25d7 = (_0x5ee0ab % 0x3c).toString().padStart(0x2, "0"),
-            _0x1c46f2 = await customPrompt(
-              "輸入新的時間差 格式(小時:分鐘、小時分鐘、分鐘 或 END)：",
-              _0x24065f + ":" + _0xdc25d7,
-            );
-          if (_0x1c46f2) {
-            let _0x3ed9e2 = null;
-            const _0x2a510c = _0x1c46f2.trim().toUpperCase();
-            if (/^\d{1,2}:\d{2}$/.test(_0x2a510c)) {
-              const [_0x4e7550, _0x544e2a] = _0x2a510c
-                .split(":")
-                .map((_0x12c347) => parseInt(_0x12c347));
-              _0x3ed9e2 = _0x4e7550 * 0x3c + _0x544e2a;
-            } else {
-              if (/^\d{3,4}$/.test(_0x2a510c)) {
-                const _0xac8b64 = parseInt(_0x2a510c.slice(0x0, -0x2)),
-                  _0x2b673b = parseInt(_0x2a510c.slice(-0x2));
-                _0x3ed9e2 = _0xac8b64 * 0x3c + _0x2b673b;
-              } else {
-                if (/^\d+$/.test(_0x2a510c)) _0x3ed9e2 = parseInt(_0x2a510c);
-                else {
-                  if (_0x2a510c === "END") {
-                    ((chart.data.datasets[0x0].data = _0x48762d.slice(
-                      0x0,
-                      _0x5c1c11 + 0x2,
-                    )),
-                      chart.update(),
-                      updateSegmentSummary());
-                    break;
-                  }
-                }
-              }
-            }
-            _0x3ed9e2 !== null && !isNaN(_0x3ed9e2)
-              ? ((_0x48762d[_0x5c1c11 + 0x1].x =
-                  _0x48762d[_0x5c1c11].x + _0x3ed9e2),
-                chart.update(),
-                updateSegmentSummary())
-              : await customAlert(
-                  "輸入格式錯誤，請使用 HH:MM、HHMM、MM 或 END",
-                );
-          }
-          break;
-        }
+  })();
+  async function editPoint(pointIndex) {
+    const data = chart.data.datasets[0].data[pointIndex];
+    const newVal = await customPrompt("輸入新的溫度：", data.y);
+    if (newVal !== null && !isNaN(newVal)) {
+      chart.data.datasets[0].data[pointIndex].y = parseInt(newVal);
+      chart.update();
+      updateSegmentSummary();
+    }
+  }
+
+  async function editSegmentTime(segmentIndex) {
+    const data = chart.data.datasets[0].data;
+    const tStart = data[segmentIndex].x;
+    const tEnd = data[segmentIndex + 1].x;
+    const diff = tEnd - tStart;
+    const hours = Math.floor(diff / 60)
+      .toString()
+      .padStart(2, "0");
+    const mins = (diff % 60).toString().padStart(2, "0");
+
+    const newVal = await customPrompt(
+      "輸入新的時間差 格式(小時:分鐘、小時分鐘、分鐘 或 END)：",
+      hours + ":" + mins
+    );
+
+    if (newVal) {
+      let newDiff = null;
+      const val = newVal.trim().toUpperCase();
+      if (/^\d{1,2}:\d{2}$/.test(val)) {
+        const parts = val.split(":").map((p) => parseInt(p));
+        newDiff = parts[0] * 60 + parts[1];
+      } else if (/^\d{3,4}$/.test(val)) {
+        const h = parseInt(val.slice(0, -2));
+        const m = parseInt(val.slice(-2));
+        newDiff = h * 60 + m;
+      } else if (/^\d+$/.test(val)) {
+        newDiff = parseInt(val);
+      } else if (val === "END") {
+        chart.data.datasets[0].data = data.slice(0, segmentIndex + 2);
+        chart.data.datasets[0].data[segmentIndex + 1].x = tStart;
+        chart.update();
+        updateSegmentSummary();
+        return;
+      }
+
+      if (newDiff !== null && !isNaN(newDiff)) {
+        data[segmentIndex + 1].x = tStart + newDiff;
+        chart.update();
+        updateSegmentSummary();
+      } else {
+        await customAlert("輸入格式錯誤，請使用 HH:MM、HHMM、MM 或 END");
       }
     }
-  }));
+  }
+
+  window.handleChartDblClick = async function(e) {
+    const pointIndex = getPointIndex(e);
+    if (pointIndex !== null) {
+      await editPoint(pointIndex);
+      return;
+    }
+
+    const { x, y } = getXY(e);
+    const meta = chart.getDatasetMeta(0);
+    for (let i = 0; i < meta.data.length - 1; i++) {
+      const pt1 = meta.data[i];
+      const pt2 = meta.data[i + 1];
+      const midX = (pt1.x + pt2.x) / 2;
+      const midY = (pt1.y + pt2.y) / 2;
+      if (Math.abs(x - midX) < 20 && Math.abs(y - midY) < 20) {
+        await editSegmentTime(i);
+        return;
+      }
+    }
+  };
+
+  canvas.addEventListener("dblclick", window.handleChartDblClick);
 function drawDistanceLabels() {
   const meta = chart.getDatasetMeta(0);
   const ctx = chart.ctx;
@@ -462,59 +514,98 @@ function drawDistanceLabels() {
   };
 
   const dataPoints = chart.data.datasets[0].data;
-  for (let i = 0; i < dataPoints.length; i++) {
-    const pointMeta = meta.data[i];
-
-    // Draw vertical program divider line
-    if (i % 8 === 0) {
-      ctx.save();
-      const pvIdx = Math.floor(i / 8) + 1;
-      const xPos = pointMeta.x;
-      const yTop = chart.chartArea.top;
-      const yBottom = chart.chartArea.bottom;
-
-      ctx.beginPath();
-      ctx.moveTo(xPos, yTop);
-      ctx.lineTo(xPos, yBottom);
-      ctx.lineWidth = 2;
-      // 第一個是紅線 (Red), others cycle through distinct colors
-      const programColors = [
-        "#ff4d4d",
-        "#4cd137",
-        "#4facfe",
-        "#ffb84d",
-        "#9c88ff",
-        "#e84118",
-        "#00a8ff",
-      ];
-      ctx.strokeStyle = programColors[(pvIdx - 1) % programColors.length];
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = ctx.strokeStyle;
-      ctx.font = "bold 14px 'Noto Sans TC', sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillText("程式" + pvIdx, xPos + 6, yTop + 6);
-      ctx.restore();
-    }
-
-    // Label for PV_SV (Node tags)
-    if (i > 0) {
+    // Label for PV_SV (Node tags) with stacking logic for same X
+    const badgesToDraw = [];
+    for (let i = 1; i < dataPoints.length; i++) {
       const diffX = dataPoints[i].x - dataPoints[i - 1].x;
+      const svIndex = ((i - 1) % 8) + 1;
+      const pointMeta = meta.data[i];
+      
       if (diffX > 0) {
-        const svIndex = ((i - 1) % 8) + 1;
-        const text = "第" + svIndex + "段";
-        drawBadge(
-          text,
-          pointMeta.x,
-          pointMeta.y - 25,
-          "rgba(37, 99, 235, 0.9)",
-          "#ffffff",
-        ); // Blue badge
+        badgesToDraw.push({
+          text: "第" + svIndex + "段",
+          x: pointMeta.x,
+          y: pointMeta.y,
+          bg: "rgba(37, 99, 235, 0.9)", // Blue badge
+          color: "#ffffff"
+        });
+      } else {
+        badgesToDraw.push({
+          text: "第" + svIndex + "段(END)",
+          x: pointMeta.x,
+          y: pointMeta.y,
+          bg: "rgba(220, 38, 38, 0.9)", // Red badge for END
+          color: "#ffffff"
+        });
       }
     }
+
+    const xGroups = {};
+    window.nodeBadges = []; // Store hitboxes
+
+    for (let i = 0; i < badgesToDraw.length; i++) {
+      const b = badgesToDraw[i];
+      const xKey = Math.round(b.x);
+      if (!xGroups[xKey]) xGroups[xKey] = { baseY: b.y, count: 0 };
+
+      const stackIndex = xGroups[xKey].count;
+      xGroups[xKey].count++;
+
+      const badgeY = xGroups[xKey].baseY - 25 - stackIndex * 28;
+      drawBadge(b.text, b.x, badgeY, b.bg, b.color);
+
+      // Calculate hitbox for clicking
+      ctx.font = "bold 13px 'Noto Sans TC', sans-serif";
+      const textWidth = ctx.measureText(b.text).width;
+      const badgeWidth = textWidth + 12;
+      const badgeHeight = 22;
+
+      window.nodeBadges.push({
+        index: b.pointIndex,
+        left: b.x - badgeWidth / 2,
+        right: b.x + badgeWidth / 2,
+        top: badgeY - badgeHeight / 2,
+        bottom: badgeY + badgeHeight / 2,
+      });
+    }
+
+    for (let i = 0; i < dataPoints.length; i++) {
+      const pointMeta = meta.data[i];
+
+      // Draw vertical program divider line
+      if (i % 8 === 0) {
+        ctx.save();
+        const pvIdx = Math.floor(i / 8) + 1;
+        const xPos = pointMeta.x;
+        const yTop = chart.chartArea.top;
+        const yBottom = chart.chartArea.bottom;
+
+        ctx.beginPath();
+        ctx.moveTo(xPos, yTop);
+        ctx.lineTo(xPos, yBottom);
+        ctx.lineWidth = 2;
+        // 第一個是紅線 (Red), others cycle through distinct colors
+        const programColors = [
+          "#ff4d4d",
+          "#4cd137",
+          "#4facfe",
+          "#ffb84d",
+          "#9c88ff",
+          "#e84118",
+          "#00a8ff",
+        ];
+        ctx.strokeStyle = programColors[(pvIdx - 1) % programColors.length];
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.font = "bold 14px 'Noto Sans TC', sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("程式" + pvIdx, xPos + 6, yTop + 6);
+        ctx.restore();
+      }
 
     // Label for Time Difference (Midpoint tags)
     if (i < dataPoints.length - 1) {
@@ -1146,27 +1237,43 @@ function loadExample(_0x5b3c3b) {
     updateSegmentSummary());
 }
 (document.getElementById("test3").addEventListener("click", async () => {
-  const _0x3a3b8b = document.getElementById("error-message"),
-    _0x1eaf95 = chart.data.datasets[0x0].data;
-  if (_0x1eaf95.length < 0x2) {
-    _0x3a3b8b.textContent = "資料點不足，無法檢查最後一段時間是否為END";
+  let dataPoints = chart.data.datasets[0x0].data;
+  if (dataPoints.length < 0x2) {
+    await customAlert("資料點不足，無法檢查最後一段時間是否為END");
     return;
   }
-  const _0x2ad3e6 = _0x1eaf95.length - 0x1,
-    _0x1128c3 = _0x1eaf95[_0x2ad3e6].x - _0x1eaf95[_0x2ad3e6 - 0x1].x;
-  if (_0x1128c3 !== 0) {
-    const lastPoint = _0x1eaf95[_0x2ad3e6];
-    _0x1eaf95.push({ x: lastPoint.x, y: lastPoint.y });
+
+  // Check for 00:00 segments in the middle of the program
+  let middleZeroIndex = -1;
+  for (let i = 1; i < dataPoints.length - 1; i++) {
+    if (dataPoints[i].x === dataPoints[i - 1].x) {
+      middleZeroIndex = i;
+      break;
+    }
+  }
+
+  if (middleZeroIndex !== -1) {
+    // Delete the 00:00 segment AND everything after it.
+    chart.data.datasets[0].data = dataPoints.slice(0, middleZeroIndex);
     chart.update();
     updateSegmentSummary();
-    _0x3a3b8b.textContent =
-      "錯誤!最後一段程式時間必須為END。已為您補上最後一段 END 程式。";
+    await customAlert("設定錯誤 請重新調整");
+    return;
+  }
+
+  dataPoints = chart.data.datasets[0x0].data; // refresh
+  const _0x2ad3e6 = dataPoints.length - 0x1,
+    _0x1128c3 = dataPoints[_0x2ad3e6].x - dataPoints[_0x2ad3e6 - 0x1].x;
+  if (_0x1128c3 !== 0) {
+    const lastPoint = dataPoints[_0x2ad3e6];
+    dataPoints.push({ x: lastPoint.x, y: lastPoint.y });
+    chart.update();
+    updateSegmentSummary();
     await customAlert(
-      "已自動補上最後一段 END 程式，請按照流程圖輸入進溫度控制器",
+      "錯誤!最後一段程式時間必須為END。\n已為您補上最後一段 END 程式，請按照流程圖輸入進溫度控制器",
     );
     updateFloatingSummary();
   } else {
-    _0x3a3b8b.textContent = "";
     await customAlert("程式正確，請按照右邊的流程圖輸入進溫度控制器");
     updateFloatingSummary();
   }
